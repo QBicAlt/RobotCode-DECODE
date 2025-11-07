@@ -1,15 +1,13 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.subsystem;
 
 import androidx.annotation.NonNull;
 
-import com.pedropathing.Drivetrain;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.FollowerConstants;
 import com.pedropathing.ftc.drivetrains.Mecanum;
 import com.pedropathing.ftc.drivetrains.MecanumConstants;
 import com.pedropathing.ftc.localization.constants.PinpointConstants;
 import com.pedropathing.ftc.localization.localizers.PinpointLocalizer;
-import com.pedropathing.localization.Localizer;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import java.lang.annotation.ElementType;
@@ -44,26 +42,6 @@ public class Drive implements Subsystem {
             )
     ));
 
-    public static DcMotorEx getFrontLeft() {
-        return INSTANCE.frontLeft.get();
-    }
-
-    public static DcMotorEx getFrontRight() {
-        return INSTANCE.frontRight.get();
-    }
-
-    public static DcMotorEx getBackLeft() {
-        return INSTANCE.backLeft.get();
-    }
-
-    public static DcMotorEx getBackRight() {
-        return INSTANCE.backRight.get();
-    }
-
-    public static Follower getFollower() {
-        return INSTANCE.follower.get();
-    }
-
     public static void drive(double x, double y, double r) {
         getFollower().setTeleOpDrive(y, x, r, true);
     }
@@ -83,4 +61,24 @@ public class Drive implements Subsystem {
     @Target(ElementType.TYPE)
     @Inherited
     public @interface Attach{}
+
+    public static DcMotorEx getFrontLeft() {
+        return INSTANCE.frontLeft.get();
+    }
+
+    public static DcMotorEx getFrontRight() {
+        return INSTANCE.frontRight.get();
+    }
+
+    public static DcMotorEx getBackLeft() {
+        return INSTANCE.backLeft.get();
+    }
+
+    public static DcMotorEx getBackRight() {
+        return INSTANCE.backRight.get();
+    }
+
+    public static Follower getFollower() {
+        return INSTANCE.follower.get();
+    }
 }
