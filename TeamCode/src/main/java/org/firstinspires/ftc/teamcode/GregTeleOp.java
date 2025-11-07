@@ -14,14 +14,10 @@ import dev.frozenmilk.mercurial.bindings.BoundGamepad;
 //@LimeLight.Attach
 @TeleOp(name="Greg TeleOp", group="Linear OpMode")
 public class GregTeleOp extends OpMode {
-    public static BoundGamepad gamepad1;
-    public static BoundGamepad gamepad2;
     public static double turn;
 
     @Override
     public void init() {
-        gamepad1 = Mercurial.gamepad1();
-        gamepad2 = Mercurial.gamepad2();
         turn = 0;
     }
 
@@ -30,9 +26,9 @@ public class GregTeleOp extends OpMode {
 //        double tx = LimeLight.getX();
 //        turn = Math.tanh(tx == 0 ? -LimeLight.getIMU().getAngularOrientation().firstAngle : tx);
         Drive.drive(
-                gamepad1.leftStickX().state(),
-                gamepad1.leftStickY().state(),
-                gamepad1.rightStickX().state() /*+ turn*/
+                Mercurial.gamepad1().leftStickX().state(),
+                Mercurial.gamepad1().leftStickY().state(),
+                Mercurial.gamepad1().rightStickX().state() /*+ turn*/
         );
     }
 }
