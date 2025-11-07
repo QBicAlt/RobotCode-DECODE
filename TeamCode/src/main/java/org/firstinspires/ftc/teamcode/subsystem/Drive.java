@@ -9,6 +9,7 @@ import com.pedropathing.ftc.drivetrains.MecanumConstants;
 import com.pedropathing.ftc.localization.constants.PinpointConstants;
 import com.pedropathing.ftc.localization.localizers.PinpointLocalizer;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -35,12 +36,20 @@ public class Drive implements Subsystem {
             new FollowerConstants(),
             new PinpointLocalizer(
                     FeatureRegistrar.getActiveOpMode().hardwareMap,
-                    new PinpointConstants()),
+                    new PinpointConstants()
+            ),
             new Mecanum(
                     FeatureRegistrar.getActiveOpMode().hardwareMap,
-                    new MecanumConstants()
+                    buildConstants()
             )
     ));
+
+    private MecanumConstants buildConstants() {
+        MecanumConstants mecanumConstants = new MecanumConstants();
+        mecanumConstants.setLeftRearMotorDirection(DcMotorSimple.Direction.REVERSE);
+        mecanumConstants.setRightRearMotorDirection(DcMotorSimple.Direction.REVERSE);
+        return mecanumConstants;
+    }
 
     public static void drive(double x, double y, double r) {
         getFollower().setTeleOpDrive(y, x, r, true);

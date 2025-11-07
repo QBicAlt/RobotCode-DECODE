@@ -32,7 +32,7 @@ public class GregTeleOp extends OpMode {
         Drive.drive(
                 gamepad1.leftStickX().state(),
                 gamepad1.leftStickY().state(),
-                gamepad1.rightStickX().state() + turn
+                gamepad1.rightStickX().state() /*+ turn*/
         );
     }
 }

@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.teamcode.util.Mth;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -26,6 +27,7 @@ import dev.frozenmilk.mercurial.subsystems.SubsystemObjectCell;
 
 public class Turret implements Subsystem {
 
+    public static double MAX_TURN = 135;
     public static final Turret INSTANCE = new Turret();
 
     private Dependency<?> dependency = Subsystem.DEFAULT_DEPENDENCY.and(new SingleAnnotation<>(LimeLight.Attach.class));
@@ -33,9 +35,9 @@ public class Turret implements Subsystem {
     private final SubsystemObjectCell<Servo> turretOne = subsystemCell(() -> FeatureRegistrar.getActiveOpMode().hardwareMap.get(Servo.class, "turret_one"));
     private final SubsystemObjectCell<Servo> turretTwo = subsystemCell(() -> FeatureRegistrar.getActiveOpMode().hardwareMap.get(Servo.class, "turret_two"));
 
-//    public static void turnTurret(double ) {
-//        tur
-//    }
+    public static void turnTurret(double dir) {
+        INSTANCE.turretOne.get().setPosition(Mth.clamp(dir, -MAX_TURN, MAX_TURN));
+    }
 
     @NonNull
     @Override
