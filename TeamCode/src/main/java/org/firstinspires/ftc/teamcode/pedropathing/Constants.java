@@ -15,7 +15,7 @@ public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants();
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
     public static MecanumConstants driveConstants = new MecanumConstants()
-            .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
+            .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightRearMotorDirection(DcMotorSimple.Direction.REVERSE);
     public static PinpointConstants pinpointConstants = new PinpointConstants();
 
