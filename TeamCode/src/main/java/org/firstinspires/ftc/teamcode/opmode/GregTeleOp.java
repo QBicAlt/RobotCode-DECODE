@@ -2,33 +2,33 @@ package org.firstinspires.ftc.teamcode.opmode;
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.subsystem.Drive;
+import org.firstinspires.ftc.teamcode.pedropathing.Constants;
+import org.firstinspires.ftc.teamcode.subsystem.Turret;
 
 import dev.nextftc.core.components.SubsystemComponent;
+import dev.nextftc.extensions.pedro.PedroComponent;
+import dev.nextftc.extensions.pedro.PedroDriverControlled;
+import dev.nextftc.ftc.Gamepads;
 import dev.nextftc.ftc.NextFTCOpMode;
+import dev.nextftc.hardware.driving.DriverControlledCommand;
 
-@TeleOp
+@TeleOp(name = "Greg TeleOp")
 public class GregTeleOp extends NextFTCOpMode {
-    private Drive drive;
     @Override
     public void onInit() {
-        drive = new Drive(hardwareMap);
-
         addComponents(
-                new SubsystemComponent(drive)
+                new PedroComponent(Constants::createFollower),
+                new SubsystemComponent(Turret.INSTANCE)
         );
     }
 
     @Override
     public void onUpdate() {
-        drive.drive(
-                gamepad1.left_stick_x,
-                gamepad1.left_stick_y,
-                gamepad1.right_stick_x
+        DriverControlledCommand driverControlled = new PedroDriverControlled(
+                Gamepads.gamepad1().leftStickY(),
+                Gamepads.gamepad1().leftStickX(),
+                Gamepads.gamepad1().rightStickX()
         );
-
-        telemetry.addData("gamepad1 left_stick_x:", gamepad1.left_stick_x);
-        telemetry.update();
+        driverControlled.schedule();
     }
 }
