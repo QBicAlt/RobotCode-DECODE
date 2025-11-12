@@ -1,34 +1,72 @@
 package org.firstinspires.ftc.teamcode.opmode;
 
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.pedropathing.Constants;
+import org.firstinspires.ftc.teamcode.subsystem.Intake;
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
 
+import dev.nextftc.bindings.BindingManager;
+import dev.nextftc.core.components.BindingsComponent;
 import dev.nextftc.core.components.SubsystemComponent;
 import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.extensions.pedro.PedroDriverControlled;
 import dev.nextftc.ftc.Gamepads;
 import dev.nextftc.ftc.NextFTCOpMode;
 import dev.nextftc.hardware.driving.DriverControlledCommand;
+import static dev.nextftc.extensions.pedro.PedroComponent.follower;
 
 @TeleOp(name = "Greg TeleOp")
 public class GregTeleOp extends NextFTCOpMode {
-    @Override
-    public void onInit() {
+    private DriverControlledCommand driveCmd;
+
+
+    public GregTeleOp() {
         addComponents(
                 new PedroComponent(Constants::createFollower),
-                new SubsystemComponent(Turret.INSTANCE)
-        );
+                new SubsystemComponent(Turret.INSTANCE),
+                new SubsystemComponent(Intake.INSTANCE),   // ← you were missing this
+                BindingsComponent.INSTANCE);
+
+
+
+    }
+    @Override
+    public void onInit() {
+        follower().setPose(new Pose(0, 0, 0));
+        follower().update();
     }
 
     @Override
-    public void onUpdate() {
-        DriverControlledCommand driverControlled = new PedroDriverControlled(
+    public void onStartButtonPressed() {
+        follower().startTeleopDrive();
+        driveCmd = new PedroDriverControlled(
                 Gamepads.gamepad1().leftStickY(),
                 Gamepads.gamepad1().leftStickX(),
                 Gamepads.gamepad1().rightStickX()
         );
-        driverControlled.schedule();
+        driveCmd.schedule();
+
+        Gamepads.gamepad1().leftBumper()
+                .whenBecomesTrue(Intake.INSTANCE.intakeOnePowerFull)
+                .whenBecomesTrue(Intake.INSTANCE.intakeTwoPowerHalf)
+                .whenBecomesFalse(Intake.INSTANCE.intakeTwoZero)
+                .whenBecomesFalse(Intake.INSTANCE.intakeOneZero);
+
+        Gamepads.gamepad1().x()
+                .whenBecomesTrue(Intake.INSTANCE.indexerIn);
+        Gamepads.gamepad1().y()
+                .whenBecomesTrue(Intake.INSTANCE.indexerOut);
+
+
+
     }
+
+
+        @Override
+        public void onUpdate () {
+            BindingManager.update();
+        }
+
 }
