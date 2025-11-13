@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.pedropathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystem.Intake;
+import org.firstinspires.ftc.teamcode.subsystem.LauncherOuttakeFuckingThing;
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
 
 import dev.nextftc.bindings.BindingManager;
@@ -26,16 +27,17 @@ public class GregTeleOp extends NextFTCOpMode {
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(Turret.INSTANCE),
-                new SubsystemComponent(Intake.INSTANCE),   // ← you were missing this
-                BindingsComponent.INSTANCE);
-
-
+                new SubsystemComponent(Intake.INSTANCE),
+                new SubsystemComponent(LauncherOuttakeFuckingThing.INSTANCE),
+                BindingsComponent.INSTANCE
+        );
 
     }
     @Override
     public void onInit() {
         follower().setPose(new Pose(0, 0, 0));
         follower().update();
+//        LauncherOuttakeFuckingThing.INSTANCE.slow.schedule();
     }
 
     @Override
@@ -56,11 +58,17 @@ public class GregTeleOp extends NextFTCOpMode {
 
         Gamepads.gamepad1().x()
                 .whenBecomesTrue(Intake.INSTANCE.indexerIn);
+
         Gamepads.gamepad1().y()
                 .whenBecomesTrue(Intake.INSTANCE.indexerOut);
 
+/*
+        Gamepads.gamepad1().rightTrigger().greaterThan(0.5)
+                .whenBecomesTrue(LauncherOuttakeFuckingThing.INSTANCE.launch);
 
-
+        Gamepads.gamepad1().rightTrigger().greaterThan(0.5)
+                .whenBecomesFalse(LauncherOuttakeFuckingThing.INSTANCE.slow);
+*/
     }
 
 
