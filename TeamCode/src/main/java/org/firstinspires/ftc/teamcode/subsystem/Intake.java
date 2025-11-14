@@ -15,7 +15,9 @@ public class Intake implements Subsystem {
     public final ServoEx indexer = new ServoEx("indexer");
 
     public final Command intakeOnePowerFull = new SetPower(intakeOne, 1).requires(this);
-    public final Command intakeTwoPowerHalf = new SetPower(intakeTwo, 0.5).requires(this);
+    public final Command intakeTwoPowerHalf = new SetPower(intakeTwo, .5).requires(this);
+    public final Command intakeTwoPowerFull = new SetPower(intakeTwo, 1).requires(this);
+
     public final Command intakeTwoZero = new SetPower(intakeTwo, 0).requires(this);
     public final Command intakeOneZero = new SetPower(intakeOne, 0).requires(this);
 
