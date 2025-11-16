@@ -22,14 +22,11 @@ public class Turret implements Subsystem {
         turretTwo = new ServoEx("turret_two");
     }
 
-  //  public void turretPos(double angle){
-       // angle = angle/maxRange;
-//turretOne.setPosition(angle);
-      //  turretTwo.setPosition(-angle);
-//    }
-
-  //  public final Command turretPositon = new SetPosition(turretOne,turretPos();).requires(this);
-
+    public void turretPos(double angle){
+        angle = angle / maxRange;
+        turretOne.setPosition(angle);
+        turretTwo.setPosition(-angle);
+    }
 
     @Override
     public void periodic() { // runs in the loop
