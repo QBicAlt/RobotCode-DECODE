@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmode;
 
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -26,7 +27,7 @@ public class GregTeleOp extends NextFTCOpMode {
     private DriverControlledCommand driveCmd;
 
     public GregTeleOp() {
-        turret = new Turret(this);
+        turret = new Turret();
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(turret),
@@ -40,6 +41,8 @@ public class GregTeleOp extends NextFTCOpMode {
     public void onInit() {
         follower().setPose(new Pose(0, 0, 0));
         follower().update();
+
+        turret.setPos(0);
 
         telemetry = new MultipleTelemetry(telemetry);
         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(0.0);
