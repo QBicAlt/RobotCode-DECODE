@@ -22,19 +22,20 @@ import static dev.nextftc.extensions.pedro.PedroComponent.follower;
 
 @TeleOp(name = "Greg TeleOp")
 public class GregTeleOp extends NextFTCOpMode {
+    public final Turret turret;
     private DriverControlledCommand driveCmd;
 
-
     public GregTeleOp() {
+        turret = new Turret(this);
         addComponents(
                 new PedroComponent(Constants::createFollower),
-                new SubsystemComponent(Turret.INSTANCE),
+                new SubsystemComponent(turret),
                 new SubsystemComponent(Intake.INSTANCE),
                 new SubsystemComponent(LauncherOuttakeFuckingThing.INSTANCE),
                 BindingsComponent.INSTANCE
         );
-
     }
+
     @Override
     public void onInit() {
         follower().setPose(new Pose(0, 0, 0));
@@ -52,6 +53,7 @@ public class GregTeleOp extends NextFTCOpMode {
                 Gamepads.gamepad1().leftStickX(),
                 Gamepads.gamepad1().rightStickX()
         );
+
         driveCmd.schedule();
 
         Gamepads.gamepad1().leftBumper()
@@ -66,7 +68,6 @@ public class GregTeleOp extends NextFTCOpMode {
         Gamepads.gamepad1().y()
                 .whenBecomesTrue(Intake.INSTANCE.indexerOut);
 
-
         Gamepads.gamepad1().rightTrigger().greaterThan(0.5)
                 .whenBecomesTrue(new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(LauncherOuttakeFuckingThing.LAUNCH_RPM)))
@@ -75,13 +76,11 @@ public class GregTeleOp extends NextFTCOpMode {
 
     }
 
-
-        @Override
-        public void onUpdate () {
-            BindingManager.update();
-            telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
-            telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
-            telemetry.update();
-        }
-
+    @Override
+    public void onUpdate () {
+        BindingManager.update();
+        telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
+        telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
+        telemetry.update();
+    }
 }
