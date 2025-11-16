@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.subsystems.Subsystem;
 import dev.nextftc.hardware.impl.ServoEx;
@@ -10,16 +12,14 @@ public class Turret implements Subsystem {
     public static final Turret INSTANCE = new Turret();
     public ServoEx turretOne;
     public ServoEx turretTwo;
+    public Limelight3A limelight;
     double maxRange = 289.07; // max range of turret
     public double forward = maxRange * .5;
 
-
-
     @Override
     public void initialize() {
-     //   turretOne = new ServoEx("turret_one");
-     //   turretTwo = new ServoEx("turret_two");
-
+        turretOne = new ServoEx("turret_one");
+        turretTwo = new ServoEx("turret_two");
     }
 
   //  public void turretPos(double angle){
