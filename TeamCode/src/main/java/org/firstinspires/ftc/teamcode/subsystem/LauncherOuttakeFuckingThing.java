@@ -44,7 +44,8 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     private double targetRadPerSec = 0.0;
 
     public double getTargetRpm() {
-        return radPerSecToRpm(targetRadPerSec); }
+        return radPerSecToRpm(targetRadPerSec);
+    }
 
     @Override
     public void initialize() {
