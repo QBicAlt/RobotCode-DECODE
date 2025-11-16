@@ -26,8 +26,8 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
         return rad * 60.0 / (2.0 * Math.PI);
     }
 
-    public static double SLOW_RPM   = 2000.0;
-    public static double LAUNCH_RPM = 6000.0;
+    public static double SLOW_RPM   = 2500;
+    public static double LAUNCH_RPM = 3800;
 
     public static PIDCoefficients COEFFS = new PIDCoefficients(
             0.0008,  // kP (tune)
@@ -35,9 +35,9 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
             0.0000   // kD
     );
 
-    public static double kS = 0.0;
+    public static double kS = 0.01;
     public static double kV = 0.000027;
-    public static double kA = 0.0;
+    public static double kA = 0.004;
 
     private ControlSystem velocityPID;
 
@@ -64,7 +64,7 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     }
 
     public double getCurrentRpm(){
-        double velRadPerSec = (-motorOne.getVelocity() / 25) * 60;
+        double velRadPerSec = (-motorOne.getVelocity() / 28) * 60;
         return velRadPerSec;
     }
 
