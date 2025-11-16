@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
+import org.firstinspires.ftc.teamcode.util.Mth;
+
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.subsystems.Subsystem;
 import dev.nextftc.hardware.impl.ServoEx;
@@ -23,7 +25,8 @@ public class Turret implements Subsystem {
     }
 
     public void turretPos(double angle){
-        angle = angle / maxRange;
+        angle = angle / 180;
+        angle = Mth.clamp(angle, -forward, forward);
         turretOne.setPosition(angle);
         turretTwo.setPosition(-angle);
     }
