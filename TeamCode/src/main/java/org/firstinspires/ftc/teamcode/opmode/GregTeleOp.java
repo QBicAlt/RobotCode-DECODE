@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.opmode;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -21,10 +22,12 @@ import dev.nextftc.ftc.NextFTCOpMode;
 import dev.nextftc.hardware.driving.DriverControlledCommand;
 import static dev.nextftc.extensions.pedro.PedroComponent.follower;
 
+@Config
 @TeleOp(name = "Greg TeleOp")
 public class GregTeleOp extends NextFTCOpMode {
     public final Turret turret;
     private DriverControlledCommand driveCmd;
+    public static double turretAngle = 0;
 
     public GregTeleOp() {
         turret = new Turret();
@@ -79,7 +82,7 @@ public class GregTeleOp extends NextFTCOpMode {
 
         Gamepads.gamepad1().leftTrigger().greaterThan(0.5)
                 .whenBecomesTrue(new LambdaCommand().setStart(() ->
-                        turret.setPos(0)));
+                        turret.setPos(turretAngle)));
     }
 
     @Override
