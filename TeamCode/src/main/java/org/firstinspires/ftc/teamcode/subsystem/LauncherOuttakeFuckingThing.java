@@ -27,7 +27,7 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     }
 
     public static double SLOW_RPM   = 3000;
-    public static double LAUNCH_RPM = 3800;
+    public static double LAUNCH_RPM = 3600;
 
     public static PIDCoefficients COEFFS = new PIDCoefficients(
             0.0008,  // kP (tune)
@@ -36,7 +36,7 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     );
 
     public static double kS = 0.0;
-    public static double kV = 0.004;
+    public static double kV = 0.0045;
     public static double kA = 0.01;
 
     private ControlSystem velocityPID;

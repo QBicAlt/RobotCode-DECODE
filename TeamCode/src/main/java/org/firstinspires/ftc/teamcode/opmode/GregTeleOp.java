@@ -83,6 +83,13 @@ public class GregTeleOp extends NextFTCOpMode {
         Gamepads.gamepad1().leftTrigger().greaterThan(0.5)
                 .whenBecomesTrue(new LambdaCommand().setStart(() ->
                         turret.setPos(turretAngle)));
+        Gamepads.gamepad1().rightBumper()
+                .whenBecomesTrue(new LambdaCommand().setStart(() ->
+                        turret.enableAutoAim(true)));
+         //       .whenBecomesFalse(new LambdaCommand().setStart(() ->
+           //             turret.enableAutoAim(false)));
+
+
     }
 
     @Override

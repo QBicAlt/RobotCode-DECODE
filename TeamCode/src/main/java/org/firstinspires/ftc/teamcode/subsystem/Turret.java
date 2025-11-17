@@ -1,17 +1,18 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.Servo;
-
-import org.firstinspires.ftc.robotcore.internal.hardware.android.GpioPin;
+import com.qualcomm.robotcore.util.Range;
 
 import dev.nextftc.core.subsystems.Subsystem;
 import dev.nextftc.ftc.ActiveOpMode;
 import dev.nextftc.hardware.impl.Direction;
 import dev.nextftc.hardware.impl.IMUEx;
 import dev.nextftc.hardware.impl.ServoEx;
-
+@Config
 public class Turret implements Subsystem {
 
     public ServoEx turretOne;
@@ -19,12 +20,17 @@ public class Turret implements Subsystem {
     public IMUEx imu;
     public Limelight3A limelight;
 
-    // Turret mechanical range (in DEGREES) – total sweep
     private static final double TURRET_RANGE_DEG      = 289.07;
     private static final double TURRET_HALF_RANGE_DEG = TURRET_RANGE_DEG * 0.5;
-
-    // Where center is in servo units (tune this if needed!)
     private static final double SERVO_CENTER = 0.5;
+
+    private double turretAngleDeg = 0.0;
+    private boolean autoAimEnabled = false;
+    public static double kP = .15;
+    public static double deadband = .3;
+
+
+   public static double LIMELIGHT_TURRET_OFFSET_DEG = -3;
 
     @Override
     public void initialize() {
@@ -37,12 +43,21 @@ public class Turret implements Subsystem {
 
         limelight = ActiveOpMode.hardwareMap().get(Limelight3A.class, "limelight");
         limelight.start();
+
+        setPos(0.0);
     }
 
+    public void enableAutoAim(boolean enabled) {
+        this.autoAimEnabled = enabled;
+    }
+
+    public void setManualAngle(double angleDeg) {
+        autoAimEnabled = false;
+        turretAngleDeg = angleDeg;
+        setPos(turretAngleDeg);
+    }
 
     public void setPos(double angleDeg) {
-        // angleDeg -= imu.get().inDeg;
-
         double clampedDeg = Math.max(-TURRET_HALF_RANGE_DEG,
                 Math.min(TURRET_HALF_RANGE_DEG, angleDeg));
 
@@ -60,11 +75,21 @@ public class Turret implements Subsystem {
 
     @Override
     public void periodic() {
+        if (!autoAimEnabled) return;
+
         LLResult result = limelight.getLatestResult();
-        if (result != null && result.isValid()) {
-            double tx = result.getTx();
-            // you can use tx to auto-aim: setPosDegrees(tx + offset), etc.
-        }
+        if (result == null || !result.isValid()) return;
+
+        double tx = result.getTx() - LIMELIGHT_TURRET_OFFSET_DEG;
+
+        if (Math.abs(tx) < deadband) return;
+
+        turretAngleDeg += kP * tx;
+
+        // Apply limelight ↔ turret alignment offset
+        double commanded = turretAngleDeg;
+        commanded = Range.clip(commanded, -TURRET_HALF_RANGE_DEG, TURRET_HALF_RANGE_DEG);
+
+        setPos(commanded);
     }
 }
-
