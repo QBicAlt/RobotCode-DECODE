@@ -42,7 +42,6 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     public static double kS = 0.0;
     public static double kV = 0.0045;
     public static double kA = 0.01;
-
     private ControlSystem velocityPID;
 
     private double targetRadPerSec = 0.0;

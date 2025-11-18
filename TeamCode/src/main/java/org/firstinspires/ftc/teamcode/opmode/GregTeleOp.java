@@ -74,7 +74,6 @@ public class GregTeleOp extends NextFTCOpMode {
 
         Gamepads.gamepad1().y()
                 .whenBecomesTrue(Intake.INSTANCE.indexerOut);
-
         Gamepads.gamepad1().rightTrigger().greaterThan(0.5)
                 .whenBecomesTrue(new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(LauncherOuttakeFuckingThing.LAUNCH_RPM)))

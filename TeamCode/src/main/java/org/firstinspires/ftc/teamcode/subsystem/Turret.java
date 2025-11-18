@@ -149,7 +149,6 @@ public class Turret implements Subsystem {
                 lockedOnTarget = false;
             }
         }
-
         // when basically centered, remember global goal heading
         if (Math.abs(tx) < LOCK_DEADBAND_DEG) {
             double robotHeading = getRobotHeadingDeg();
