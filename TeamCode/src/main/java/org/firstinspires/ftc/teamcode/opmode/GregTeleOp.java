@@ -64,9 +64,11 @@ public class GregTeleOp extends NextFTCOpMode {
 
         Gamepads.gamepad1().leftBumper()
                 .whenBecomesTrue(Intake.INSTANCE.intakeOnePowerFull)
-                .whenBecomesTrue(Intake.INSTANCE.intakeTwoPowerHalf)
-                .whenBecomesFalse(Intake.INSTANCE.intakeTwoZero)
                 .whenBecomesFalse(Intake.INSTANCE.intakeOneZero);
+        Gamepads.gamepad1().leftTrigger().greaterThan(.5)
+                .whenBecomesTrue(Intake.INSTANCE.intakeTwoPowerFull)
+                .whenBecomesFalse(Intake.INSTANCE.intakeTwoZero);
+
 
         Gamepads.gamepad1().x()
                 .whenBecomesTrue(Intake.INSTANCE.indexerIn);
@@ -80,12 +82,12 @@ public class GregTeleOp extends NextFTCOpMode {
                 .whenBecomesFalse(new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(LauncherOuttakeFuckingThing.SLOW_RPM)));
 
-        Gamepads.gamepad1().leftTrigger().greaterThan(0.5)
-                .whenBecomesTrue(new LambdaCommand().setStart(() ->
-                        turret.setPos(turretAngle)));
-        Gamepads.gamepad1().rightBumper()
-                .whenBecomesTrue(new LambdaCommand().setStart(() ->
-                        turret.enableAutoAim(true)));
+
+        Gamepads.gamepad1().leftBumper()
+                .whenBecomesTrue(
+                        new LambdaCommand().setStart(turret::snapToRememberedGoalAndEnable));
+
+
          //       .whenBecomesFalse(new LambdaCommand().setStart(() ->
            //             turret.enableAutoAim(false)));
 

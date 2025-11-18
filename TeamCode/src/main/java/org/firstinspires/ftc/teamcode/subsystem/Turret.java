@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
@@ -12,6 +11,7 @@ import dev.nextftc.ftc.ActiveOpMode;
 import dev.nextftc.hardware.impl.Direction;
 import dev.nextftc.hardware.impl.IMUEx;
 import dev.nextftc.hardware.impl.ServoEx;
+
 @Config
 public class Turret implements Subsystem {
 
@@ -26,11 +26,23 @@ public class Turret implements Subsystem {
 
     private double turretAngleDeg = 0.0;
     private boolean autoAimEnabled = false;
-    public static double kP = .15;
-    public static double deadband = .3;
+    public static double kP = 0.14;
 
+    // how far Limelight's "center" is from turret's "center"
+    public static final double LIMELIGHT_X_OFFSET_DEG = -3;
 
-   public static double LIMELIGHT_TURRET_OFFSET_DEG = -3;
+    // filtering / hysteresis
+    public static double filteredTx = 0.0;
+    public static double TX_FILTER_ALPHA = 0.7;
+
+    public static double LOCK_DEADBAND_DEG   = 0.5;
+    public static double UNLOCK_DEADBAND_DEG = 1.5;
+
+    // remembered goal heading in field space
+    private boolean hasGoalFieldHeading = false;
+    private double lastGoalFieldHeadingDeg = 0.0;
+
+    private boolean lockedOnTarget = false;
 
     @Override
     public void initialize() {
@@ -47,27 +59,43 @@ public class Turret implements Subsystem {
         setPos(0.0);
     }
 
+    private double getRobotHeadingDeg() {
+        return imu.get().inDeg;
+    }
+
+    private static double wrapDeg(double a) {
+        while (a > 180) a -= 360;
+        while (a < -180) a += 360;
+        return a;
+    }
+
     public void enableAutoAim(boolean enabled) {
-        this.autoAimEnabled = enabled;
+        autoAimEnabled = enabled;
+        if (!enabled) {
+            lockedOnTarget = false;
+        }
     }
 
     public void setManualAngle(double angleDeg) {
         autoAimEnabled = false;
-        turretAngleDeg = angleDeg;
-        setPos(turretAngleDeg);
+        setPos(angleDeg);  // setPos will now update turretAngleDeg
     }
 
     public void setPos(double angleDeg) {
-        double clampedDeg = Math.max(-TURRET_HALF_RANGE_DEG,
-                Math.min(TURRET_HALF_RANGE_DEG, angleDeg));
+        double clampedDeg = Range.clip(angleDeg,
+                -TURRET_HALF_RANGE_DEG,
+                TURRET_HALF_RANGE_DEG);
+
+        // *** IMPORTANT: keep our state in sync with what we actually command ***
+        turretAngleDeg = clampedDeg;
 
         double norm = clampedDeg / TURRET_RANGE_DEG;
 
-        double servoOnePos = SERVO_CENTER + norm;    // center at 0.5
-        double servoTwoPos = SERVO_CENTER - norm;    // mirrored
+        double servoOnePos = SERVO_CENTER + norm;
+        double servoTwoPos = SERVO_CENTER - norm;
 
-        servoOnePos = Math.max(0.0, Math.min(1.0, servoOnePos));
-        servoTwoPos = Math.max(0.0, Math.min(1.0, servoTwoPos));
+        servoOnePos = Range.clip(servoOnePos, 0.0, 1.0);
+        servoTwoPos = Range.clip(servoTwoPos, 0.0, 1.0);
 
         turretOne.setPosition(servoOnePos);
         turretTwo.setPosition(servoTwoPos);
@@ -78,18 +106,72 @@ public class Turret implements Subsystem {
         if (!autoAimEnabled) return;
 
         LLResult result = limelight.getLatestResult();
-        if (result == null || !result.isValid()) return;
+        if (result == null || !result.isValid()) {
+            lockedOnTarget = false;
+            autoAimEnabled = false;
+            return;
+        }
 
-        double tx = result.getTx() - LIMELIGHT_TURRET_OFFSET_DEG;
+        // *** REMOVE THIS – it was an infinite loop doing nothing ***
+        // while (result.isValid()) {
+        //    Angle lastHeading = imu.get();
+        // }
 
-        if (Math.abs(tx) < deadband) return;
+        double rawTx = result.getTx();
+        double tx = rawTx - LIMELIGHT_X_OFFSET_DEG;
 
-        turretAngleDeg += kP * tx;
+        // low-pass filter
+        filteredTx = TX_FILTER_ALPHA * filteredTx
+                + (1.0 - TX_FILTER_ALPHA) * tx;
 
-        // Apply limelight ↔ turret alignment offset
-        double commanded = turretAngleDeg;
-        commanded = Range.clip(commanded, -TURRET_HALF_RANGE_DEG, TURRET_HALF_RANGE_DEG);
+        double absFiltered = Math.abs(filteredTx);
 
-        setPos(commanded);
+        // hysteresis lock logic
+        if (!lockedOnTarget) {
+            if (absFiltered < LOCK_DEADBAND_DEG) {
+                lockedOnTarget = true;
+            }
+        } else {
+            if (absFiltered > UNLOCK_DEADBAND_DEG) {
+                lockedOnTarget = false;
+            }
+        }
+
+        // whenever we're basically centered, record global goal heading
+        if (Math.abs(tx) < LOCK_DEADBAND_DEG) {
+            double robotHeading = getRobotHeadingDeg();
+            lastGoalFieldHeadingDeg = wrapDeg(robotHeading + turretAngleDeg);
+            hasGoalFieldHeading = true;
+        }
+
+        // if we are "locked", don't keep nudging and causing twitch
+        if (lockedOnTarget) return;
+
+        // P control toward the tag using filtered tx
+        turretAngleDeg -= kP * filteredTx;
+
+        turretAngleDeg = Range.clip(turretAngleDeg,
+                -TURRET_HALF_RANGE_DEG,
+                TURRET_HALF_RANGE_DEG);
+
+        setPos(turretAngleDeg);
+    }
+
+    public void snapToRememberedGoalAndEnable() {
+        enableAutoAim(true);
+
+        if (!hasGoalFieldHeading) {
+            // never locked onto goal yet → nothing to snap to
+            return;
+        }
+
+        double currentHeading = getRobotHeadingDeg();
+        double desiredTurretAngle = wrapDeg(lastGoalFieldHeadingDeg - currentHeading);
+
+        desiredTurretAngle = Range.clip(desiredTurretAngle,
+                -TURRET_HALF_RANGE_DEG,
+                TURRET_HALF_RANGE_DEG);
+
+        setPos(desiredTurretAngle);
     }
 }
