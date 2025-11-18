@@ -1,20 +1,24 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.util.Range;
 
 import dev.nextftc.control.ControlSystem;
 import dev.nextftc.control.KineticState;
 import dev.nextftc.control.feedback.PIDCoefficients;
 import dev.nextftc.core.subsystems.Subsystem;
+import dev.nextftc.extensions.pedro.PedroComponent;
+import dev.nextftc.ftc.ActiveOpMode;
 import dev.nextftc.hardware.impl.MotorEx;
 import com.acmerobotics.dashboard.config.Config;
+
+import org.firstinspires.ftc.teamcode.util.Data;
 
 @Config
 public class LauncherOuttakeFuckingThing implements Subsystem {
     public static final LauncherOuttakeFuckingThing INSTANCE = new LauncherOuttakeFuckingThing();
     private LauncherOuttakeFuckingThing() {}
 
-    // --- Hardware ---
     private MotorEx motorOne;
     private MotorEx motorTwo;
 
@@ -71,6 +75,24 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
 
     @Override
     public void periodic() {
+        Pose pos = PedroComponent.follower().getPose();
+        double x = pos.getX() * 2;
+        double y = pos.getY() * 2;
+        double ceilY = Math.ceil(y);
+        double ceilX = Math.ceil(x);
+        double fx = x - Math.floor(x);
+        double fy = y - Math.floor(y);
+
+        double[] dataOne = Data.LAUNCHER_POSES[(int) y][(int) x];
+        double[] dataTwo = Data.LAUNCHER_POSES[(int) ceilY][(int) ceilX];
+        double[] dataThree = Data.LAUNCHER_POSES[(int) y][(int) ceilX];
+        double[] dataFour = Data.LAUNCHER_POSES[(int) ceilY][(int) x];
+
+        double rpm = (1 - fy) * ((1 - fx) * dataOne[0] + fx * dataThree[0]) + fy * ((1 - fx) * dataTwo[0] + fx * dataFour[0]);
+        double angle = (1 - fy) * ((1 - fx) * dataOne[1] + fx * dataThree[1]) + fy * ((1 - fx) * dataTwo[1] + fx * dataFour[1]);
+
+        setTargetRpm(rpm);
+
         double measRad = motorOne.getVelocity();
         double pidOut = velocityPID.calculate(new KineticState(0.0, measRad));
         double ff = /*kS * Math.signum(targetRadPerSec) +*/ kV * targetRadPerSec;
