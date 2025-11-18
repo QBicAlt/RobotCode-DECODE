@@ -39,7 +39,6 @@ public class GregTeleOp extends NextFTCOpMode {
                 BindingsComponent.INSTANCE
         );
     }
-
     @Override
     public void onInit() {
         follower().setPose(new Pose(0, 0, 0));
