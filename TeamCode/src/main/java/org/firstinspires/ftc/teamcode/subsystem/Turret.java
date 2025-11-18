@@ -26,23 +26,25 @@ public class Turret implements Subsystem {
 
     private double turretAngleDeg = 0.0;
     private boolean autoAimEnabled = false;
-    public static double kP = 0.14;
 
-    // how far Limelight's "center" is from turret's "center"
-    public static final double LIMELIGHT_X_OFFSET_DEG = -3;
+    public static double kP = -0.25;
+    public static double LIMELIGHT_X_OFFSET_DEG = -3;
 
-    // filtering / hysteresis
     public static double filteredTx = 0.0;
-    public static double TX_FILTER_ALPHA = 0.7;
+    public static double TX_FILTER_ALPHA = 0.3;
 
     public static double LOCK_DEADBAND_DEG   = 0.5;
-    public static double UNLOCK_DEADBAND_DEG = 1.5;
+    public static double UNLOCK_DEADBAND_DEG = 2;
+
+    private boolean lockedOnTarget = false;
 
     // remembered goal heading in field space
     private boolean hasGoalFieldHeading = false;
     private double lastGoalFieldHeadingDeg = 0.0;
 
-    private boolean lockedOnTarget = false;
+    private int lostFrames = 0;
+    // tunable from Dashboard if you want
+    public static int MAX_LOST_FRAMES = 8;
 
     @Override
     public void initialize() {
@@ -53,13 +55,14 @@ public class Turret implements Subsystem {
 
         imu = new IMUEx("imu", Direction.RIGHT, Direction.FORWARD);
 
+
         limelight = ActiveOpMode.hardwareMap().get(Limelight3A.class, "limelight");
         limelight.start();
 
         setPos(0.0);
     }
 
-    private double getRobotHeadingDeg() {
+    public double getRobotHeadingDeg() {
         return imu.get().inDeg;
     }
 
@@ -73,12 +76,14 @@ public class Turret implements Subsystem {
         autoAimEnabled = enabled;
         if (!enabled) {
             lockedOnTarget = false;
+        } else {
+            filteredTx = 0.0;
         }
     }
 
     public void setManualAngle(double angleDeg) {
-        autoAimEnabled = false;
-        setPos(angleDeg);  // setPos will now update turretAngleDeg
+        enableAutoAim(false);
+        setPos(angleDeg);
     }
 
     public void setPos(double angleDeg) {
@@ -86,7 +91,6 @@ public class Turret implements Subsystem {
                 -TURRET_HALF_RANGE_DEG,
                 TURRET_HALF_RANGE_DEG);
 
-        // *** IMPORTANT: keep our state in sync with what we actually command ***
         turretAngleDeg = clampedDeg;
 
         double norm = clampedDeg / TURRET_RANGE_DEG;
@@ -108,14 +112,23 @@ public class Turret implements Subsystem {
         LLResult result = limelight.getLatestResult();
         if (result == null || !result.isValid()) {
             lockedOnTarget = false;
+
+            // count how many frames we've lost the tag
+            lostFrames++;
+
+            // if it's just a momentary dropout, keep auto aim ON and
+            // just hold the turret where it is
+            if (lostFrames <= MAX_LOST_FRAMES) {
+                return;
+            }
+
+            // tag has been gone for a while -> now we truly give up
             autoAimEnabled = false;
             return;
+        } else {
+            // got a valid result again, reset miss counter
+            lostFrames = 0;
         }
-
-        // *** REMOVE THIS – it was an infinite loop doing nothing ***
-        // while (result.isValid()) {
-        //    Angle lastHeading = imu.get();
-        // }
 
         double rawTx = result.getTx();
         double tx = rawTx - LIMELIGHT_X_OFFSET_DEG;
@@ -137,18 +150,17 @@ public class Turret implements Subsystem {
             }
         }
 
-        // whenever we're basically centered, record global goal heading
+        // when basically centered, remember global goal heading
         if (Math.abs(tx) < LOCK_DEADBAND_DEG) {
             double robotHeading = getRobotHeadingDeg();
-            lastGoalFieldHeadingDeg = wrapDeg(robotHeading + turretAngleDeg);
+            // goal heading in field space = robot heading - turret angle (because turret + is "right")
+            lastGoalFieldHeadingDeg = wrapDeg(robotHeading - turretAngleDeg);
             hasGoalFieldHeading = true;
         }
-
-        // if we are "locked", don't keep nudging and causing twitch
         if (lockedOnTarget) return;
 
         // P control toward the tag using filtered tx
-        turretAngleDeg -= kP * filteredTx;
+        turretAngleDeg -= kP * filteredTx; // flip sign if needed
 
         turretAngleDeg = Range.clip(turretAngleDeg,
                 -TURRET_HALF_RANGE_DEG,
@@ -158,15 +170,22 @@ public class Turret implements Subsystem {
     }
 
     public void snapToRememberedGoalAndEnable() {
+        // Always turn on auto aim
         enableAutoAim(true);
 
+        // If tag is currently visible, DON'T snap with IMU—just let LL tracking handle it
+        LLResult result = limelight.getLatestResult();
+        if (result != null && result.isValid()) {
+            return;
+        }
+
+        // If no tag but we have a remembered heading, snap toward it
         if (!hasGoalFieldHeading) {
-            // never locked onto goal yet → nothing to snap to
             return;
         }
 
         double currentHeading = getRobotHeadingDeg();
-        double desiredTurretAngle = wrapDeg(lastGoalFieldHeadingDeg - currentHeading);
+        double desiredTurretAngle = wrapDeg(currentHeading - lastGoalFieldHeadingDeg);
 
         desiredTurretAngle = Range.clip(desiredTurretAngle,
                 -TURRET_HALF_RANGE_DEG,
