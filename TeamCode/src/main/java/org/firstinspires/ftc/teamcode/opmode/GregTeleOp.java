@@ -72,7 +72,6 @@ public class GregTeleOp extends NextFTCOpMode {
 
         Gamepads.gamepad1().y()
                 .whenBecomesTrue(Intake.INSTANCE.indexerOut);
-
         Gamepads.gamepad1().rightTrigger().greaterThan(0.5)
                 .whenBecomesTrue(new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(LauncherOuttakeFuckingThing.LAUNCH_RPM)))
@@ -80,7 +79,7 @@ public class GregTeleOp extends NextFTCOpMode {
                         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(LauncherOuttakeFuckingThing.SLOW_RPM)));
 
 
-        Gamepads.gamepad1().leftBumper()
+        Gamepads.gamepad1().rightBumper()
                 .whenBecomesTrue(
                         new LambdaCommand().setStart(Turret.INSTANCE::snapToRememberedGoalAndEnable));
 
@@ -96,6 +95,7 @@ public class GregTeleOp extends NextFTCOpMode {
         BindingManager.update();
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
         telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
+        telemetry.addData("imu", turret.getRobotHeadingDeg());
         telemetry.update();
     }
 }
