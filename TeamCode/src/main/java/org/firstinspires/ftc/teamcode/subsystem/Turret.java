@@ -14,13 +14,14 @@ import dev.nextftc.hardware.impl.IMUEx;
 import dev.nextftc.hardware.impl.ServoEx;
 @Config
 public class Turret implements Subsystem {
+    public static final Turret INSTANCE = new Turret();
 
     public ServoEx turretOne;
     public ServoEx turretTwo;
     public IMUEx imu;
     public Limelight3A limelight;
 
-    private static final double TURRET_RANGE_DEG      = 289.07;
+    private static final double TURRET_RANGE_DEG = 289.07;
     private static final double TURRET_HALF_RANGE_DEG = TURRET_RANGE_DEG * 0.5;
     private static final double SERVO_CENTER = 0.5;
 
@@ -28,7 +29,6 @@ public class Turret implements Subsystem {
     private boolean autoAimEnabled = false;
     public static double kP = .15;
     public static double deadband = .3;
-
 
    public static double LIMELIGHT_TURRET_OFFSET_DEG = -3;
 
@@ -58,13 +58,12 @@ public class Turret implements Subsystem {
     }
 
     public void setPos(double angleDeg) {
-        double clampedDeg = Math.max(-TURRET_HALF_RANGE_DEG,
-                Math.min(TURRET_HALF_RANGE_DEG, angleDeg));
+        double clampedDeg = Math.max(-TURRET_HALF_RANGE_DEG, Math.min(TURRET_HALF_RANGE_DEG, angleDeg));
 
         double norm = clampedDeg / TURRET_RANGE_DEG;
 
-        double servoOnePos = SERVO_CENTER + norm;    // center at 0.5
-        double servoTwoPos = SERVO_CENTER - norm;    // mirrored
+        double servoOnePos = SERVO_CENTER + norm; // center at 0.5
+        double servoTwoPos = SERVO_CENTER - norm; // mirrored
 
         servoOnePos = Math.max(0.0, Math.min(1.0, servoOnePos));
         servoTwoPos = Math.max(0.0, Math.min(1.0, servoTwoPos));
@@ -75,21 +74,24 @@ public class Turret implements Subsystem {
 
     @Override
     public void periodic() {
-        if (!autoAimEnabled) return;
+        if (autoAimEnabled) {
+            LLResult result = limelight.getLatestResult();
+            if (result == null || !result.isValid()) {
+                return;
+            }
 
-        LLResult result = limelight.getLatestResult();
-        if (result == null || !result.isValid()) return;
+            double tx = result.getTx() - LIMELIGHT_TURRET_OFFSET_DEG;
 
-        double tx = result.getTx() - LIMELIGHT_TURRET_OFFSET_DEG;
+            if (Math.abs(tx) < deadband) {
+                return;
+            }
 
-        if (Math.abs(tx) < deadband) return;
+            turretAngleDeg += kP * tx;
 
-        turretAngleDeg += kP * tx;
+            double commanded = turretAngleDeg;
+            commanded = Range.clip(commanded, -TURRET_HALF_RANGE_DEG, TURRET_HALF_RANGE_DEG);
 
-        // Apply limelight ↔ turret alignment offset
-        double commanded = turretAngleDeg;
-        commanded = Range.clip(commanded, -TURRET_HALF_RANGE_DEG, TURRET_HALF_RANGE_DEG);
-
-        setPos(commanded);
+            setPos(commanded);
+        }
     }
 }
