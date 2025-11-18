@@ -25,15 +25,13 @@ import static dev.nextftc.extensions.pedro.PedroComponent.follower;
 @Config
 @TeleOp(name = "Greg TeleOp")
 public class GregTeleOp extends NextFTCOpMode {
-    public final Turret turret;
     private DriverControlledCommand driveCmd;
     public static double turretAngle = 0;
 
     public GregTeleOp() {
-        turret = new Turret();
         addComponents(
                 new PedroComponent(Constants::createFollower),
-                new SubsystemComponent(turret),
+                new SubsystemComponent(Turret.INSTANCE),
                 new SubsystemComponent(Intake.INSTANCE),
                 new SubsystemComponent(LauncherOuttakeFuckingThing.INSTANCE),
                 BindingsComponent.INSTANCE
@@ -44,7 +42,7 @@ public class GregTeleOp extends NextFTCOpMode {
         follower().setPose(new Pose(0, 0, 0));
         follower().update();
 
-        turret.setPos(0);
+        Turret.INSTANCE.setPos(0);
 
         telemetry = new MultipleTelemetry(telemetry);
         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(0.0);
@@ -84,7 +82,7 @@ public class GregTeleOp extends NextFTCOpMode {
 
         Gamepads.gamepad1().leftBumper()
                 .whenBecomesTrue(
-                        new LambdaCommand().setStart(turret::snapToRememberedGoalAndEnable));
+                        new LambdaCommand().setStart(Turret.INSTANCE::snapToRememberedGoalAndEnable));
 
 
          //       .whenBecomesFalse(new LambdaCommand().setStart(() ->

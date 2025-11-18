@@ -14,6 +14,7 @@ import dev.nextftc.hardware.impl.ServoEx;
 
 @Config
 public class Turret implements Subsystem {
+    public static final Turret INSTANCE = new Turret();
 
     public ServoEx turretOne;
     public ServoEx turretTwo;
@@ -61,6 +62,10 @@ public class Turret implements Subsystem {
 
     private double getRobotHeadingDeg() {
         return imu.get().inDeg;
+    }
+
+    public LLResult runLimelight() {
+        return limelight.getLatestResult();
     }
 
     private static double wrapDeg(double a) {
