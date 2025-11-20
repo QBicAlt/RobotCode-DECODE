@@ -3,67 +3,93 @@ package org.firstinspires.ftc.teamcode.subsystem;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.AnalogInput;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.util.Range;
 
 import dev.nextftc.core.subsystems.Subsystem;
 import dev.nextftc.ftc.ActiveOpMode;
 import dev.nextftc.hardware.impl.Direction;
 import dev.nextftc.hardware.impl.IMUEx;
-import dev.nextftc.hardware.impl.ServoEx;
 
 @Config
 public class Turret implements Subsystem {
 
-    public ServoEx turretOne;
-    public ServoEx turretTwo;
-    public IMUEx imu;
-    public Limelight3A limelight;
+    public static final Turret INSTANCE = new Turret();
+    public Turret() {}
 
-    private static final double TURRET_RANGE_DEG      = 289.07;
-    private static final double TURRET_HALF_RANGE_DEG = TURRET_RANGE_DEG * 0.5;
-    private static final double SERVO_CENTER = 0.5;
+    public enum TurretState {
+        OFF,
+        MANUAL,    // angle setpoint controlled by driver commands / dashboard
+        LIMELIGHT  // angle setpoint adjusted by Limelight outer loop
+    }
 
-    private double turretAngleDeg = 0.0;
-    private boolean autoAimEnabled = false;
+    private TurretState state = TurretState.OFF;
 
-    public static double kP = -0.25;
-    public static double LIMELIGHT_X_OFFSET_DEG = -3;
+    private CRServo turretOne;
+    private CRServo turretTwo;
+    public AnalogInput turretFeedback;
+    private IMUEx imu;
+    private Limelight3A limelight;
+
+    public static double MIN_VOLTAGE = 3.25;
+    public static double MAX_VOLTAGE = 0.05;
+
+    public static double SERVO_RANGE_DEG   = 355.0;
+    public static double TURRET_GEAR_RATIO = 0.815;
+
+    public static double MIN_ANGLE_DEG = -145.0;
+    public static double MAX_ANGLE_DEG =  145.0;
+
+    public static double angle_tester = 0.0;
+
+    public static double kP_angle = 0.017;
+    public static double kI_angle = 0.0001;
+    public static double kD_angle = 0.00057;
+
+    public static double MAX_TURRET_POWER   = 1;
+    public static double MAX_ANGLE_INTEGRAL = 50.0;
+
+    public static double HOLD_TOL_DEG = 2;
+
+    private double turretSetpointDeg = 0.0;
+    private double angleIntegral     = 0.0;
+    private double lastAngleError    = 0.0;
+
+    private static final double DT_SEC = 0.02;
+
+    public static double kAIM                 = -0.2;
+    public static double MAX_AIM_STEP_DEG     = 3.0;
+    public static double TX_FILTER_ALPHA      = 0.6;
+    public static double LIMELIGHT_X_OFFSET_DEG = -3.0;
+    public static double DEADZONE_DEG         = 1;
 
     public static double filteredTx = 0.0;
-    public static double TX_FILTER_ALPHA = 0.3;
 
-    public static double LOCK_DEADBAND_DEG   = 0.5;
-    public static double UNLOCK_DEADBAND_DEG = 2;
-
-    private boolean lockedOnTarget = false;
-
-    // remembered goal heading in field space
-    private boolean hasGoalFieldHeading = false;
-    private double lastGoalFieldHeadingDeg = 0.0;
-
-    private int lostFrames = 0;
-    // tunable from Dashboard if you want
-    public static int MAX_LOST_FRAMES = 8;
+    private boolean hasGoalFieldHeading     = false;
+    private double  lastGoalFieldHeadingDeg = 0.0;
 
     @Override
     public void initialize() {
-        Servo sdkTurretTwo = ActiveOpMode.hardwareMap().get(Servo.class, "turret_two");
-        sdkTurretTwo.setDirection(Servo.Direction.REVERSE);
-        turretOne = new ServoEx("turret_one");
-        turretTwo = new ServoEx(sdkTurretTwo);
+        turretOne = ActiveOpMode.hardwareMap().get(CRServo.class, "turret_one");
+        turretTwo = ActiveOpMode.hardwareMap().get(CRServo.class, "turret_two");
+
+        turretOne.setDirection(CRServo.Direction.REVERSE);
+        turretTwo.setDirection(CRServo.Direction.REVERSE);
+
+        turretFeedback = ActiveOpMode.hardwareMap().get(AnalogInput.class, "turret");
 
         imu = new IMUEx("imu", Direction.RIGHT, Direction.FORWARD);
-
-
         limelight = ActiveOpMode.hardwareMap().get(Limelight3A.class, "limelight");
         limelight.start();
 
-        setPos(0.0);
+        turretSetpointDeg = 0.0;
+        state = TurretState.MANUAL;
     }
 
+
     public double getRobotHeadingDeg() {
-        return imu.get().inDeg;
+        return wrapDeg(imu.get().inDeg);
     }
 
     private static double wrapDeg(double a) {
@@ -72,124 +98,162 @@ public class Turret implements Subsystem {
         return a;
     }
 
-    public void enableAutoAim(boolean enabled) {
-        autoAimEnabled = enabled;
-        if (!enabled) {
-            lockedOnTarget = false;
-        } else {
-            filteredTx = 0.0;
+    public double getMeasuredAngleDeg() {
+        double v = turretFeedback.getVoltage();
+
+        double minV = Math.min(MIN_VOLTAGE, MAX_VOLTAGE);
+        double maxV = Math.max(MIN_VOLTAGE, MAX_VOLTAGE);
+
+        if (Math.abs(maxV - minV) < 1e-4) {
+            return 0.0;
         }
+
+        double norm = (v - minV) / (maxV - minV);
+        norm = Range.clip(norm, 0.0, 1.0);
+
+        double servoDeg = (norm * SERVO_RANGE_DEG) - (SERVO_RANGE_DEG / 2.0);
+
+        double turretDeg = servoDeg * TURRET_GEAR_RATIO;
+
+        return Range.clip(turretDeg, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
+    }
+
+
+
+    public void off() {
+        state = TurretState.OFF;
+        turretOne.setPower(0.0);
+        turretTwo.setPower(0.0);
+    }
+
+    public void manual() {
+        state = TurretState.MANUAL;
+    }
+
+    public void enableLimelightAim() {
+        state = TurretState.LIMELIGHT;
+        filteredTx = 0.0;
+    }
+
+    public void disableLimelightAim() {
+        state = TurretState.MANUAL;
+        filteredTx = 0.0;
+    }
+
+    public void enableAutoAim(boolean enabled) {
+        if (enabled) enableLimelightAim();
+        else disableLimelightAim();
+    }
+
+
+    public void setSetpointDeg(double angleDeg) {
+        turretSetpointDeg = Range.clip(angleDeg, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
     }
 
     public void setManualAngle(double angleDeg) {
-        enableAutoAim(false);
-        setPos(angleDeg);
+        manual();
+        setSetpointDeg(angleDeg);
     }
 
-    public void setPos(double angleDeg) {
-        double clampedDeg = Range.clip(angleDeg,
-                -TURRET_HALF_RANGE_DEG,
-                TURRET_HALF_RANGE_DEG);
-
-        turretAngleDeg = clampedDeg;
-
-        double norm = clampedDeg / TURRET_RANGE_DEG;
-
-        double servoOnePos = SERVO_CENTER + norm;
-        double servoTwoPos = SERVO_CENTER - norm;
-
-        servoOnePos = Range.clip(servoOnePos, 0.0, 1.0);
-        servoTwoPos = Range.clip(servoTwoPos, 0.0, 1.0);
-
-        turretOne.setPosition(servoOnePos);
-        turretTwo.setPosition(servoTwoPos);
+    public void nudgeManual(double deltaDeg) {
+        if (state != TurretState.MANUAL) return;
+        setSetpointDeg(turretSetpointDeg + deltaDeg);
     }
 
-    @Override
-    public void periodic() {
-        if (!autoAimEnabled) return;
 
+    private double anglePidStep(double dtSec) {
+        double measured = getMeasuredAngleDeg();
+        double error    = turretSetpointDeg - measured;
+        double absError = Math.abs(error);
+
+        if (absError < HOLD_TOL_DEG) {
+            angleIntegral  = 0.0;
+            lastAngleError = 0.0;
+            return 0.0;
+        }
+
+        angleIntegral += error * dtSec;
+        angleIntegral = Range.clip(angleIntegral, -MAX_ANGLE_INTEGRAL, MAX_ANGLE_INTEGRAL);
+
+        double deriv = (error - lastAngleError) / dtSec;
+        lastAngleError = error;
+
+        double output = kP_angle * error + kI_angle * angleIntegral + kD_angle * deriv;
+        output = Range.clip(output, -MAX_TURRET_POWER, MAX_TURRET_POWER);
+
+        return output;
+    }
+
+
+    private void updateLimelightAim() {
         LLResult result = limelight.getLatestResult();
         if (result == null || !result.isValid()) {
-            lockedOnTarget = false;
-
-            // count how many frames we've lost the tag
-            lostFrames++;
-
-            // if it's just a momentary dropout, keep auto aim ON and
-            // just hold the turret where it is
-            if (lostFrames <= MAX_LOST_FRAMES) {
-                return;
-            }
-
-            // tag has been gone for a while -> now we truly give up
-            autoAimEnabled = false;
             return;
-        } else {
-            // got a valid result again, reset miss counter
-            lostFrames = 0;
         }
 
         double rawTx = result.getTx();
-        double tx = rawTx - LIMELIGHT_X_OFFSET_DEG;
+        double tx    = rawTx - LIMELIGHT_X_OFFSET_DEG;
 
-        // low-pass filter
         filteredTx = TX_FILTER_ALPHA * filteredTx
                 + (1.0 - TX_FILTER_ALPHA) * tx;
 
-        double absFiltered = Math.abs(filteredTx);
-
-        // hysteresis lock logic
-        if (!lockedOnTarget) {
-            if (absFiltered < LOCK_DEADBAND_DEG) {
-                lockedOnTarget = true;
-            }
-        } else {
-            if (absFiltered > UNLOCK_DEADBAND_DEG) {
-                lockedOnTarget = false;
-            }
-        }
-        // when basically centered, remember global goal heading
-        if (Math.abs(tx) < LOCK_DEADBAND_DEG) {
-            double robotHeading = getRobotHeadingDeg();
-            // goal heading in field space = robot heading - turret angle (because turret + is "right")
-            lastGoalFieldHeadingDeg = wrapDeg(robotHeading - turretAngleDeg);
+        if (Math.abs(filteredTx) < DEADZONE_DEG) {
+            double robotHeading  = getRobotHeadingDeg();
+            double measuredAngle = getMeasuredAngleDeg();
+            lastGoalFieldHeadingDeg = wrapDeg(robotHeading - measuredAngle);
             hasGoalFieldHeading = true;
+            return;
         }
-        if (lockedOnTarget) return;
 
-        // P control toward the tag using filtered tx
-        turretAngleDeg -= kP * filteredTx; // flip sign if needed
+        double aimStep = kAIM * filteredTx;
+        aimStep = Range.clip(aimStep, -MAX_AIM_STEP_DEG, MAX_AIM_STEP_DEG);
 
-        turretAngleDeg = Range.clip(turretAngleDeg,
-                -TURRET_HALF_RANGE_DEG,
-                TURRET_HALF_RANGE_DEG);
-
-        setPos(turretAngleDeg);
+        setSetpointDeg(turretSetpointDeg + aimStep);
     }
 
     public void snapToRememberedGoalAndEnable() {
-        // Always turn on auto aim
-        enableAutoAim(true);
+        enableLimelightAim();
 
-        // If tag is currently visible, DON'T snap with IMU—just let LL tracking handle it
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
             return;
         }
 
-        // If no tag but we have a remembered heading, snap toward it
         if (!hasGoalFieldHeading) {
             return;
         }
 
-        double currentHeading = getRobotHeadingDeg();
-        double desiredTurretAngle = wrapDeg(currentHeading - lastGoalFieldHeadingDeg);
+        double currentHeading   = getRobotHeadingDeg();
+        double desiredTurretDeg = wrapDeg(currentHeading - lastGoalFieldHeadingDeg);
 
-        desiredTurretAngle = Range.clip(desiredTurretAngle,
-                -TURRET_HALF_RANGE_DEG,
-                TURRET_HALF_RANGE_DEG);
+        setSetpointDeg(desiredTurretDeg);
+    }
 
-        setPos(desiredTurretAngle);
+
+    @Override
+    public void periodic() {
+        switch (state) {
+            case OFF:
+                turretOne.setPower(0.0);
+                turretTwo.setPower(0.0);
+                return;
+
+            case MANUAL:
+                setSetpointDeg(angle_tester);
+                break;
+
+            case LIMELIGHT:
+                updateLimelightAim();
+                break;
+        }
+
+        if (state != TurretState.OFF) {
+            double power = anglePidStep(DT_SEC);
+
+
+
+            turretOne.setPower(power);
+            turretTwo.setPower(power);
+        }
     }
 }

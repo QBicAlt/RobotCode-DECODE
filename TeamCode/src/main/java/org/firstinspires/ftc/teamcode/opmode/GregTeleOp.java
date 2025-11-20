@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.opmode;
 
+import static org.firstinspires.ftc.teamcode.subsystem.LauncherOuttakeFuckingThing.turret_Closed;
+import static org.firstinspires.ftc.teamcode.subsystem.LauncherOuttakeFuckingThing.turret_Open;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
@@ -44,7 +47,6 @@ public class GregTeleOp extends NextFTCOpMode {
         follower().setPose(new Pose(0, 0, 0));
         follower().update();
 
-        turret.setPos(0);
 
         telemetry = new MultipleTelemetry(telemetry);
         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(0.0);
@@ -66,7 +68,9 @@ public class GregTeleOp extends NextFTCOpMode {
                 .whenBecomesFalse(Intake.INSTANCE.intakeOneZero);
         Gamepads.gamepad1().leftTrigger().greaterThan(.5)
                 .whenBecomesTrue(Intake.INSTANCE.intakeTwoPowerFull)
-                .whenBecomesFalse(Intake.INSTANCE.intakeTwoZero);
+                .whenBecomesFalse(Intake.INSTANCE.intakeTwoZero)
+                .whenBecomesFalse(new LambdaCommand().setStart(() ->LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)));
+
 
 
         Gamepads.gamepad1().x()
@@ -80,13 +84,19 @@ public class GregTeleOp extends NextFTCOpMode {
                 .whenBecomesFalse(new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(LauncherOuttakeFuckingThing.SLOW_RPM)));
 
+        Gamepads.gamepad1().circle()
+                .whenBecomesTrue(new LambdaCommand().setStart(() ->
+                        turret.enableAutoAim(false)));
 
         Gamepads.gamepad1().rightBumper()
                 .whenBecomesTrue(
-                        new LambdaCommand().setStart(turret::snapToRememberedGoalAndEnable));
+                        new LambdaCommand().setStart(turret::snapToRememberedGoalAndEnable))
+                .whenBecomesTrue(new LambdaCommand().setStart(() ->LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)));
 
 
-         //       .whenBecomesFalse(new LambdaCommand().setStart(() ->
+
+
+                        //       .whenBecomesFalse(new LambdaCommand().setStart(() ->
            //             turret.enableAutoAim(false)));
 
 
@@ -97,6 +107,10 @@ public class GregTeleOp extends NextFTCOpMode {
         BindingManager.update();
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
         telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
+        telemetry.addData("turret rvolt", turret.getMeasuredAngleDeg());
+        telemetry.addData("turret rvolt", turret.turretFeedback.getVoltage());
+
+
         telemetry.addData("imu", turret.getRobotHeadingDeg());
         telemetry.update();
     }

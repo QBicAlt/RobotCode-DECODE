@@ -8,19 +8,19 @@ import dev.nextftc.control.KineticState;
 import dev.nextftc.control.feedback.PIDCoefficients;
 import dev.nextftc.core.subsystems.Subsystem;
 import dev.nextftc.extensions.pedro.PedroComponent;
-import dev.nextftc.ftc.ActiveOpMode;
 import dev.nextftc.hardware.impl.MotorEx;
-import com.acmerobotics.dashboard.config.Config;
+import dev.nextftc.hardware.impl.ServoEx;
 
-import org.firstinspires.ftc.teamcode.util.Data;
+import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class LauncherOuttakeFuckingThing implements Subsystem {
-    public static final LauncherOuttakeFuckingThing INSTANCE = new LauncherOuttakeFuckingThing();
+    public static final LauncherOuttakeFuckingThing INSTANCE = new  LauncherOuttakeFuckingThing();
     private LauncherOuttakeFuckingThing() {}
 
     private MotorEx motorOne;
     private MotorEx motorTwo;
+    private ServoEx turretLatch;
 
     private static double rpmToRadPerSec(double rpm) {
         return rpm * (2.0 * Math.PI) / 60.0;
@@ -29,6 +29,10 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     private static double radPerSecToRpm(double rad) {
         return rad * 60.0 / (2.0 * Math.PI);
     }
+
+    public static double turret_Closed  = .6;
+    public static double turret_Open = .07;
+
 
     public static double SLOW_RPM   = 3000;
     public static double LAUNCH_RPM = 3600;
@@ -55,6 +59,8 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
         motorOne = new MotorEx("launcher_one");
         motorTwo = new MotorEx("launcher_two");
 
+        turretLatch = new ServoEx("latch_servo");
+
         velocityPID = ControlSystem.builder()
                 .velPid(COEFFS)
                 .build();
@@ -62,10 +68,16 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
         setTargetRpm(0.0);
     }
 
+    public void setTurretLatch(double pos){
+        turretLatch.setPosition(pos);
+    }
+
+
     public void setTargetRpm(double rpm) {
         targetRadPerSec = rpmToRadPerSec(rpm);
         velocityPID.setGoal(new KineticState(0.0, targetRadPerSec));
     }
+
 
     public double getCurrentRpm(){
         double velRadPerSec = (-motorOne.getVelocity() / 28) * 60;
