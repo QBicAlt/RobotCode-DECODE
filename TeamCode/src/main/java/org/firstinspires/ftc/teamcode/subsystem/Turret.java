@@ -15,59 +15,87 @@ import dev.nextftc.hardware.impl.IMUEx;
 @Config
 public class Turret implements Subsystem {
 
+    // --- Singleton ---
     public static final Turret INSTANCE = new Turret();
     public Turret() {}
 
+    // --- States ---
     public enum TurretState {
         OFF,
-        MANUAL,    // angle setpoint controlled by driver commands / dashboard
-        LIMELIGHT  // angle setpoint adjusted by Limelight outer loop
+        MANUAL,        // angle setpoint from dashboard/driver
+        LIMELIGHT,     // pure LL PID on tx -> power
+        SNAP_TO_GOAL   // short angle PID to remembered goal angle
     }
 
     private TurretState state = TurretState.OFF;
 
+    // --- Hardware ---
     private CRServo turretOne;
     private CRServo turretTwo;
     public AnalogInput turretFeedback;
     private IMUEx imu;
     private Limelight3A limelight;
 
+    // --- Analog mapping / geometry ---
+    // Tune MIN/MAX_VOLTAGE in Dashboard so measured angle roughly matches reality.
     public static double MIN_VOLTAGE = 3.25;
     public static double MAX_VOLTAGE = 0.05;
 
-    public static double SERVO_RANGE_DEG   = 355.0;
-    public static double TURRET_GEAR_RATIO = 0.815;
+    public static double SERVO_RANGE_DEG   = 355.0;   // analog span
+    public static double TURRET_GEAR_RATIO = 0.815;   // turretDeg = servoDeg * ratio
 
-    public static double MIN_ANGLE_DEG = -145.0;
+    public static double MIN_ANGLE_DEG = -145.0;      // turret physical/safe range
     public static double MAX_ANGLE_DEG =  145.0;
 
+    // Dashboard tester – for MANUAL mode
     public static double angle_tester = 0.0;
 
+    // --- Inner angle PID (used only in MANUAL + SNAP_TO_GOAL) ---
     public static double kP_angle = 0.017;
-    public static double kI_angle = 0.0001;
+    public static double kI_angle = 0.0;        // start at 0, add later if needed
     public static double kD_angle = 0.00057;
 
-    public static double MAX_TURRET_POWER   = 1;
+    public static double MAX_TURRET_POWER   = 1.0;
     public static double MAX_ANGLE_INTEGRAL = 50.0;
 
-    public static double HOLD_TOL_DEG = 2;
+    public static double HOLD_TOL_DEG = 2.0;   // inner loop "close enough"
+    public static double SNAP_TOL_DEG = 3.0;   // when snapping to remembered angle
 
     private double turretSetpointDeg = 0.0;
     private double angleIntegral     = 0.0;
     private double lastAngleError    = 0.0;
 
-    private static final double DT_SEC = 0.02;
+    // --- Limelight PID around tx (pure LL control in LIMELIGHT state) ---
+    public static double kLL_P = -0.04;   // sign based on turret direction
+    public static double kLL_I = 0.0;
+    public static double kLL_D = 0.0;
 
-    public static double kAIM                 = -0.2;
-    public static double MAX_AIM_STEP_DEG     = 3.0;
+    public static double MAX_LL_POWER = 1.0; // clamp turret power in LL mode
+
+    private double llIntegral  = 0.0;
+    private double llLastError = 0.0;
+    private double limelightPower = 0.0;
+
+    private static final double DT_SEC = 0.02; // 20 ms loop
+
+    // --- Angle filtering (simple EMA) ---
+    public static double FILTER_ALPHA = 0.6;  // 0..1, higher = smoother
+
+    private double filteredAngleDeg   = 0.0;
+    private boolean filterInitialized = false;
+
+    // --- Limelight filtering / alignment ---
     public static double TX_FILTER_ALPHA      = 0.6;
     public static double LIMELIGHT_X_OFFSET_DEG = -3.0;
-    public static double DEADZONE_DEG         = 1;
+    public static double DEADZONE_DEG         = 1.0;
 
     public static double filteredTx = 0.0;
 
+    // --- Remembered goal heading (field coordinates) ---
     private boolean hasGoalFieldHeading     = false;
     private double  lastGoalFieldHeadingDeg = 0.0;
+
+    // --- Lifecycle ---
 
     @Override
     public void initialize() {
@@ -83,14 +111,18 @@ public class Turret implements Subsystem {
         limelight = ActiveOpMode.hardwareMap().get(Limelight3A.class, "limelight");
         limelight.start();
 
-        turretSetpointDeg = 0.0;
-        state = TurretState.MANUAL;
+        filterInitialized = false;
+        llIntegral = 0.0;
+        llLastError = 0.0;
+
+        // Start wherever we are
+        double startAngle = getMeasuredAngleDeg();
+        turretSetpointDeg = startAngle;
+        angle_tester      = startAngle;
+        state             = TurretState.MANUAL;
     }
 
-
-    public double getRobotHeadingDeg() {
-        return wrapDeg(imu.get().inDeg);
-    }
+    // --- Helpers ---
 
     private static double wrapDeg(double a) {
         while (a > 180) a -= 360;
@@ -98,6 +130,15 @@ public class Turret implements Subsystem {
         return a;
     }
 
+    public double getRobotHeadingDeg() {
+        return wrapDeg(imu.get().inDeg);
+    }
+
+    public LLResult runLimelight() {
+        return limelight.getLatestResult();
+    }
+
+    // Raw analog angle (turret degrees, clipped)
     public double getMeasuredAngleDeg() {
         double v = turretFeedback.getVoltage();
 
@@ -108,17 +149,32 @@ public class Turret implements Subsystem {
             return 0.0;
         }
 
-        double norm = (v - minV) / (maxV - minV);
+        double norm = (v - minV) / (maxV - minV); // 0..1
         norm = Range.clip(norm, 0.0, 1.0);
 
-        double servoDeg = (norm * SERVO_RANGE_DEG) - (SERVO_RANGE_DEG / 2.0);
-
+        double servoDeg  = norm * SERVO_RANGE_DEG - (SERVO_RANGE_DEG / 2.0); // -range/2..+range/2
         double turretDeg = servoDeg * TURRET_GEAR_RATIO;
 
         return Range.clip(turretDeg, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
     }
 
+    // Simple EMA filter of angle for smoother PID / limits
+    private double getFilteredAngleDeg() {
+        double raw = getMeasuredAngleDeg();
 
+        if (!filterInitialized) {
+            filteredAngleDeg   = raw;
+            filterInitialized  = true;
+            return filteredAngleDeg;
+        }
+
+        filteredAngleDeg = FILTER_ALPHA * filteredAngleDeg
+                + (1.0 - FILTER_ALPHA) * raw;
+
+        return filteredAngleDeg;
+    }
+
+    // --- State control API ---
 
     public void off() {
         state = TurretState.OFF;
@@ -133,11 +189,14 @@ public class Turret implements Subsystem {
     public void enableLimelightAim() {
         state = TurretState.LIMELIGHT;
         filteredTx = 0.0;
+        llIntegral = 0.0;
+        llLastError = 0.0;
     }
 
     public void disableLimelightAim() {
         state = TurretState.MANUAL;
         filteredTx = 0.0;
+        limelightPower = 0.0;
     }
 
     public void enableAutoAim(boolean enabled) {
@@ -145,6 +204,12 @@ public class Turret implements Subsystem {
         else disableLimelightAim();
     }
 
+    // For telemetry if you want
+    public String turretStateString() {
+        return state.toString();
+    }
+
+    // --- Setpoint helpers for angle PID (MANUAL + SNAP) ---
 
     public void setSetpointDeg(double angleDeg) {
         turretSetpointDeg = Range.clip(angleDeg, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
@@ -160,10 +225,10 @@ public class Turret implements Subsystem {
         setSetpointDeg(turretSetpointDeg + deltaDeg);
     }
 
+    // --- Inner angle PID (only used in MANUAL + SNAP_TO_GOAL) ---
 
-    private double anglePidStep(double dtSec) {
-        double measured = getMeasuredAngleDeg();
-        double error    = turretSetpointDeg - measured;
+    private double anglePidStep(double dtSec, double measuredAngle) {
+        double error    = turretSetpointDeg - measuredAngle;
         double absError = Math.abs(error);
 
         if (absError < HOLD_TOL_DEG) {
@@ -184,42 +249,58 @@ public class Turret implements Subsystem {
         return output;
     }
 
+    // --- Limelight outer loop (pure tx PID -> power in LIMELIGHT state) ---
 
-    private void updateLimelightAim() {
+    private void updateLimelightAim(double dtSec) {
         LLResult result = limelight.getLatestResult();
         if (result == null || !result.isValid()) {
+            // No tag: don't drive turret in LL mode
+            limelightPower = 0.0;
             return;
         }
 
         double rawTx = result.getTx();
         double tx    = rawTx - LIMELIGHT_X_OFFSET_DEG;
 
+        // Filter tx
         filteredTx = TX_FILTER_ALPHA * filteredTx
                 + (1.0 - TX_FILTER_ALPHA) * tx;
 
+        // Deadzone: close enough to center
         if (Math.abs(filteredTx) < DEADZONE_DEG) {
+            limelightPower = 0.0;
+
+            // Update remembered goal heading (field-relative)
             double robotHeading  = getRobotHeadingDeg();
-            double measuredAngle = getMeasuredAngleDeg();
+            double measuredAngle = getMeasuredAngleDeg(); // noisy is fine here
             lastGoalFieldHeadingDeg = wrapDeg(robotHeading - measuredAngle);
             hasGoalFieldHeading = true;
             return;
         }
 
-        double aimStep = kAIM * filteredTx;
-        aimStep = Range.clip(aimStep, -MAX_AIM_STEP_DEG, MAX_AIM_STEP_DEG);
+        // PID on tx -> turret power
+        double error = filteredTx; // positive if tag right of center
+        llIntegral += error * dtSec;
+        double deriv = (error - llLastError) / dtSec;
+        llLastError  = error;
 
-        setSetpointDeg(turretSetpointDeg + aimStep);
+        double out = kLL_P * error + kLL_I * llIntegral + kLL_D * deriv;
+        limelightPower = Range.clip(out, -MAX_LL_POWER, MAX_LL_POWER);
     }
 
-    public void snapToRememberedGoalAndEnable() {
-        enableLimelightAim();
+    // --- Snap-to-remembered-goal logic ---
 
+    public void snapToRememberedGoalAndEnable() {
+        // If we currently see a tag, just go straight into LL tracking
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
+            enableLimelightAim();
             return;
         }
 
+        // No tag – fall back to remembered field heading
         if (!hasGoalFieldHeading) {
+            // nothing remembered yet
             return;
         }
 
@@ -227,11 +308,21 @@ public class Turret implements Subsystem {
         double desiredTurretDeg = wrapDeg(currentHeading - lastGoalFieldHeadingDeg);
 
         setSetpointDeg(desiredTurretDeg);
+
+        // Enter SNAP_TO_GOAL state (short inner PID move)
+        state = TurretState.SNAP_TO_GOAL;
+
+        angleIntegral  = 0.0;
+        lastAngleError = 0.0;
     }
 
+    // --- Main periodic ---
 
     @Override
     public void periodic() {
+        double angleNow = getFilteredAngleDeg(); // filtered turret angle
+        double power = 0.0;
+
         switch (state) {
             case OFF:
                 turretOne.setPower(0.0);
@@ -239,18 +330,37 @@ public class Turret implements Subsystem {
                 return;
 
             case MANUAL:
+                // Dashboard: angle_tester
                 setSetpointDeg(angle_tester);
+                power = anglePidStep(DT_SEC, angleNow);
                 break;
 
             case LIMELIGHT:
-                updateLimelightAim();
+                updateLimelightAim(DT_SEC);
+                power = limelightPower;
+                break;
+
+            case SNAP_TO_GOAL:
+                power = anglePidStep(DT_SEC, angleNow);
+
+                // Once we're close enough, stop and go back to MANUAL
+                if (Math.abs(turretSetpointDeg - angleNow) < SNAP_TOL_DEG) {
+                    power = 0.0;
+                    state = TurretState.MANUAL;
+                }
                 break;
         }
 
         if (state != TurretState.OFF) {
-            double power = anglePidStep(DT_SEC);
+            // Software endstops using turret angle
+            double softLimit = 140.0; // inside ±145 analog span
 
-
+            if (angleNow >= softLimit && power > 0) {
+                power = 0.0;
+            }
+            if (angleNow <= -softLimit && power < 0) {
+                power = 0.0;
+            }
 
             turretOne.setPower(power);
             turretTwo.setPower(power);

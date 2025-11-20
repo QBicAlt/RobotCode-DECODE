@@ -107,11 +107,11 @@ public class GregTeleOp extends NextFTCOpMode {
         BindingManager.update();
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
         telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
-        telemetry.addData("turret rvolt", turret.getMeasuredAngleDeg());
-        telemetry.addData("turret rvolt", turret.turretFeedback.getVoltage());
-
-
+        telemetry.addData("turret_angle_deg", turret.getMeasuredAngleDeg());
+        telemetry.addData("turret_volts", turret.turretFeedback.getVoltage());
+        telemetry.addData("turret_state", turret.turretStateString());
         telemetry.addData("imu", turret.getRobotHeadingDeg());
         telemetry.update();
     }
+
 }
