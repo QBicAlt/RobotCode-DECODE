@@ -9,10 +9,13 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
+
 import org.firstinspires.ftc.teamcode.pedropathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystem.Intake;
 import org.firstinspires.ftc.teamcode.subsystem.LauncherOuttakeFuckingThing;
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
+import org.firstinspires.ftc.teamcode.subsystem.visionDistanceHelper;
 
 import dev.nextftc.bindings.BindingManager;
 import dev.nextftc.core.commands.utility.LambdaCommand;
@@ -105,6 +108,13 @@ public class GregTeleOp extends NextFTCOpMode {
     @Override
     public void onUpdate () {
         BindingManager.update();
+
+        LLResult result = turret.limelight.getLatestResult();
+        double turretAngleDeg = turret.getMeasuredAngleDeg();  // from your turret class
+
+        double distLL = visionDistanceHelper.distanceToGoalFromLimelight(result, turretAngleDeg);
+
+        telemetry.addData("LL distance to goal (in)", distLL);
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
         telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
         telemetry.addData("turret_angle_deg", turret.getMeasuredAngleDeg());

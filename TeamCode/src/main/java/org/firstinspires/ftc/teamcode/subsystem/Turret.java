@@ -34,7 +34,7 @@ public class Turret implements Subsystem {
     private CRServo turretTwo;
     public AnalogInput turretFeedback;
     private IMUEx imu;
-    private Limelight3A limelight;
+    public Limelight3A limelight;
 
     // --- Analog mapping / geometry ---
     // Tune MIN/MAX_VOLTAGE in Dashboard so measured angle roughly matches reality.
@@ -51,9 +51,9 @@ public class Turret implements Subsystem {
     public static double angle_tester = 0.0;
 
     // --- Inner angle PID (used only in MANUAL + SNAP_TO_GOAL) ---
-    public static double kP_angle = 0.017;
+    public static double kP_angle = 0.011;
     public static double kI_angle = 0.0;        // start at 0, add later if needed
-    public static double kD_angle = 0.00057;
+    public static double kD_angle = 0.00057;    // if it oscillates a lot, try lowering this
 
     public static double MAX_TURRET_POWER   = 1.0;
     public static double MAX_ANGLE_INTEGRAL = 50.0;
@@ -66,9 +66,9 @@ public class Turret implements Subsystem {
     private double lastAngleError    = 0.0;
 
     // --- Limelight PID around tx (pure LL control in LIMELIGHT state) ---
-    public static double kLL_P = -0.04;   // sign based on turret direction
+    public static double kLL_P = -0.015;   // sign based on turret direction
     public static double kLL_I = 0.0;
-    public static double kLL_D = 0.0;
+    public static double kLL_D = -0.00035;
 
     public static double MAX_LL_POWER = 1.0; // clamp turret power in LL mode
 
@@ -91,8 +91,12 @@ public class Turret implements Subsystem {
 
     public static double filteredTx = 0.0;
 
-    // --- Remembered goal heading (field coordinates) ---
-    private boolean hasGoalFieldHeading     = false;
+    // --- Remembered goal turret angle (robot frame, for debug/telemetry) ---
+    private boolean hasGoalTurretAngle     = false;
+    private double  lastGoalTurretAngleDeg = 0.0;
+
+    // --- Remembered goal field heading (field frame, compensates robot yaw) ---
+    private boolean hasGoalFieldHeading    = false;
     private double  lastGoalFieldHeadingDeg = 0.0;
 
     // --- Lifecycle ---
@@ -270,11 +274,17 @@ public class Turret implements Subsystem {
         if (Math.abs(filteredTx) < DEADZONE_DEG) {
             limelightPower = 0.0;
 
-            // Update remembered goal heading (field-relative)
-            double robotHeading  = getRobotHeadingDeg();
-            double measuredAngle = getMeasuredAngleDeg(); // noisy is fine here
-            lastGoalFieldHeadingDeg = wrapDeg(robotHeading - measuredAngle);
+            // Remember turret angle (robot-relative) for future SNAP_TO_GOAL
+            double turretAngle = getMeasuredAngleDeg();
+            lastGoalTurretAngleDeg = turretAngle;
+            hasGoalTurretAngle = true;
+
+            // Also remember field-relative heading to the goal:
+            // goalHeading = robotHeading + turretAngle
+            double robotHeading = getRobotHeadingDeg();
+            lastGoalFieldHeadingDeg = wrapDeg(robotHeading + turretAngle);
             hasGoalFieldHeading = true;
+
             return;
         }
 
@@ -291,21 +301,23 @@ public class Turret implements Subsystem {
     // --- Snap-to-remembered-goal logic ---
 
     public void snapToRememberedGoalAndEnable() {
-        // If we currently see a tag, just go straight into LL tracking
+        // 1) If we currently see a tag, just go straight into LL tracking
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
             enableLimelightAim();
             return;
         }
 
-        // No tag – fall back to remembered field heading
+        // 2) No tag – fall back to remembered field heading
         if (!hasGoalFieldHeading) {
             // nothing remembered yet
             return;
         }
 
-        double currentHeading   = getRobotHeadingDeg();
-        double desiredTurretDeg = wrapDeg(currentHeading - lastGoalFieldHeadingDeg);
+        double currentHeading = getRobotHeadingDeg();
+
+        // turretAngle = goalFieldHeading - currentRobotHeading
+        double desiredTurretDeg = wrapDeg(lastGoalFieldHeadingDeg - currentHeading);
 
         setSetpointDeg(desiredTurretDeg);
 
@@ -340,7 +352,17 @@ public class Turret implements Subsystem {
                 power = limelightPower;
                 break;
 
-            case SNAP_TO_GOAL:
+            case SNAP_TO_GOAL: {
+                // If a tag appears while we're snapping, immediately switch to LL
+                LLResult result = limelight.getLatestResult();
+                if (result != null && result.isValid()) {
+                    enableLimelightAim();
+                    updateLimelightAim(DT_SEC);
+                    power = limelightPower;
+                    break;
+                }
+
+                // Otherwise, keep snapping toward the remembered angle
                 power = anglePidStep(DT_SEC, angleNow);
 
                 // Once we're close enough, stop and go back to MANUAL
@@ -349,6 +371,7 @@ public class Turret implements Subsystem {
                     state = TurretState.MANUAL;
                 }
                 break;
+            }
         }
 
         if (state != TurretState.OFF) {
