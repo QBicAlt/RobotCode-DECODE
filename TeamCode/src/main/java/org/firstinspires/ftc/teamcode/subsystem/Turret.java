@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -8,6 +9,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.util.Range;
 
 import dev.nextftc.core.subsystems.Subsystem;
+import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.ftc.ActiveOpMode;
 import dev.nextftc.hardware.impl.Direction;
 import dev.nextftc.hardware.impl.IMUEx;
@@ -47,6 +49,11 @@ public class Turret implements Subsystem {
     public static double MIN_ANGLE_DEG = -145.0;      // turret physical/safe range
     public static double MAX_ANGLE_DEG =  145.0;
 
+    // Soft limit margin so we never command or drive into hard stops
+    public static double SOFT_LIMIT_DEG = 135.0;
+
+    public static double LOCK_TX_TOL_DEG = 1.0; // lock on relocalization tolerance
+
     // Dashboard tester – for MANUAL mode
     public static double angle_tester = 0.0;
 
@@ -66,7 +73,7 @@ public class Turret implements Subsystem {
     private double lastAngleError    = 0.0;
 
     // --- Limelight PID around tx (pure LL control in LIMELIGHT state) ---
-    public static double kLL_P = -0.015;   // sign based on turret direction
+    public static double kLL_P = -0.010;   // sign based on turret direction
     public static double kLL_I = 0.0;
     public static double kLL_D = -0.00035;
 
@@ -85,19 +92,29 @@ public class Turret implements Subsystem {
     private boolean filterInitialized = false;
 
     // --- Limelight filtering / alignment ---
-    public static double TX_FILTER_ALPHA      = 0.6;
-    public static double LIMELIGHT_X_OFFSET_DEG = -3.0;
-    public static double DEADZONE_DEG         = 1.0;
+    public static double TX_FILTER_ALPHA         = 0.6;
+    public static double LIMELIGHT_X_OFFSET_DEG  = 0;
+    public static double DEADZONE_DEG            = 1.0;
 
     public static double filteredTx = 0.0;
 
     // --- Remembered goal turret angle (robot frame, for debug/telemetry) ---
-    private boolean hasGoalTurretAngle     = false;
-    private double  lastGoalTurretAngleDeg = 0.0;
+    private boolean hasGoalTurretAngle      = false;
+    private double  lastGoalTurretAngleDeg  = 0.0;
 
-    // --- Remembered goal field heading (field frame, compensates robot yaw) ---
-    private boolean hasGoalFieldHeading    = false;
+    // --- Remembered goal field heading (field frame, for debug/telemetry) ---
+    private boolean hasGoalFieldHeading     = false;
     private double  lastGoalFieldHeadingDeg = 0.0;
+
+    // --- Snapshot when tag was centered (for snap logic) ---
+    //   - lockRobotHeadingDeg: robot heading when tx ≈ 0
+    //   - lockTurretAngleDeg:  turret angle when tx ≈ 0
+    // Later:
+    //   deltaRobotHeading = currentHeading - lockRobotHeadingDeg
+    //   desiredTurretDeg  = lockTurretAngleDeg - deltaRobotHeading
+    private boolean hasLockSnapshot     = false;
+    private double  lockRobotHeadingDeg = 0.0;
+    private double  lockTurretAngleDeg  = 0.0;
 
     // --- Lifecycle ---
 
@@ -124,6 +141,8 @@ public class Turret implements Subsystem {
         turretSetpointDeg = startAngle;
         angle_tester      = startAngle;
         state             = TurretState.MANUAL;
+
+        setManualAngle(0);
     }
 
     // --- Helpers ---
@@ -135,7 +154,16 @@ public class Turret implements Subsystem {
     }
 
     public double getRobotHeadingDeg() {
-        return wrapDeg(imu.get().inDeg);
+        // Prefer heading from Pedro/Pinpoint (radians -> degrees)
+        try {
+            Pose pose = PedroComponent.follower().getPose();
+            double headingRad = pose.getHeading();       // Pedro heading (ccw+, radians)
+            double headingDeg = Math.toDegrees(headingRad);
+            return wrapDeg(headingDeg);
+        } catch (Exception e) {
+            // Fallback to REV IMU if Pedro/Pinpoint isn't ready for some reason
+            return wrapDeg(imu.get().inDeg);
+        }
     }
 
     public LLResult runLimelight() {
@@ -216,7 +244,8 @@ public class Turret implements Subsystem {
     // --- Setpoint helpers for angle PID (MANUAL + SNAP) ---
 
     public void setSetpointDeg(double angleDeg) {
-        turretSetpointDeg = Range.clip(angleDeg, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
+        // Never command outside soft limits
+        turretSetpointDeg = Range.clip(angleDeg, -SOFT_LIMIT_DEG, SOFT_LIMIT_DEG);
     }
 
     public void setManualAngle(double angleDeg) {
@@ -274,16 +303,26 @@ public class Turret implements Subsystem {
         if (Math.abs(filteredTx) < DEADZONE_DEG) {
             limelightPower = 0.0;
 
-            // Remember turret angle (robot-relative) for future SNAP_TO_GOAL
-            double turretAngle = getMeasuredAngleDeg();
-            lastGoalTurretAngleDeg = turretAngle;
-            hasGoalTurretAngle = true;
-
-            // Also remember field-relative heading to the goal:
-            // goalHeading = robotHeading + turretAngle
+            double turretAngle  = getMeasuredAngleDeg();
             double robotHeading = getRobotHeadingDeg();
+
+            // For telemetry
+            lastGoalTurretAngleDeg  = turretAngle;
             lastGoalFieldHeadingDeg = wrapDeg(robotHeading + turretAngle);
-            hasGoalFieldHeading = true;
+            hasGoalTurretAngle      = true;
+            hasGoalFieldHeading     = true;
+
+            // Snapshot for snap logic
+            lockTurretAngleDeg  = turretAngle;      // angle where tag was centered
+            lockRobotHeadingDeg = robotHeading;     // robot heading at that moment
+            hasLockSnapshot     = true;
+
+            // ✅ Relocalize Pedro X/Y, keep heading from odometry/IMU
+            VisionDistanceHelper.relocalizePedroFromLimelight(
+                    PedroComponent.follower(),
+                    result,
+                    turretAngle
+            );
 
             return;
         }
@@ -298,8 +337,7 @@ public class Turret implements Subsystem {
         limelightPower = Range.clip(out, -MAX_LL_POWER, MAX_LL_POWER);
     }
 
-    // --- Snap-to-remembered-goal logic ---
-
+    // --- Snap-to-remembered-goal logic (FIXED) ---
     public void snapToRememberedGoalAndEnable() {
         // 1) If we currently see a tag, just go straight into LL tracking
         LLResult result = limelight.getLatestResult();
@@ -308,18 +346,73 @@ public class Turret implements Subsystem {
             return;
         }
 
-        // 2) No tag – fall back to remembered field heading
-        if (!hasGoalFieldHeading) {
-            // nothing remembered yet
+        // 2) No tag – use the stored lock snapshot
+        if (!hasLockSnapshot) {
+            // we've never actually centered on a tag yet
             return;
         }
 
         double currentHeading = getRobotHeadingDeg();
+        double currentAngle = getMeasuredAngleDeg();
 
-        // turretAngle = goalFieldHeading - currentRobotHeading
-        double desiredTurretDeg = wrapDeg(lastGoalFieldHeadingDeg - currentHeading);
+        // How much the robot rotated since we last had the tag centered
+        double deltaRobotHeading = wrapDeg(currentHeading - lockRobotHeadingDeg);
 
-        setSetpointDeg(desiredTurretDeg);
+        // Calculate the ideal turret angle to maintain field heading
+        // If robot turned +30°, turret must turn -30° relative to old angle
+        double idealTurretDeg = lockTurretAngleDeg - deltaRobotHeading;
+
+        // Wrap to [-180, 180]
+        double wrappedTarget = wrapDeg(idealTurretDeg);
+
+        // 🔹 FIX 1: Check if the wrapped angle is outside our physical limits
+        if (Math.abs(wrappedTarget) > SOFT_LIMIT_DEG) {
+            // Try the opposite wrap direction (±360°)
+            double altTarget = wrappedTarget > 0
+                    ? wrappedTarget - 360
+                    : wrappedTarget + 360;
+
+            // Use whichever option is:
+            // a) Within physical limits
+            // b) Closer to current turret position
+            if (Math.abs(altTarget) <= SOFT_LIMIT_DEG) {
+                double distWrapped = Math.abs(wrappedTarget - currentAngle);
+                double distAlt = Math.abs(altTarget - currentAngle);
+
+                if (distAlt < distWrapped) {
+                    wrappedTarget = altTarget;
+                }
+            }
+
+            // 🔹 FIX 2: If STILL outside limits, check if robot rotated too much
+            if (Math.abs(wrappedTarget) > SOFT_LIMIT_DEG) {
+                // Calculate max rotation we can compensate for from current lock position
+                double maxCompensation = SOFT_LIMIT_DEG - Math.abs(lockTurretAngleDeg);
+
+                if (Math.abs(deltaRobotHeading) > maxCompensation) {
+                    // Robot rotated too much - can't reach target without hitting limits
+                    // Fall back to MANUAL at current position
+                    state = TurretState.MANUAL;
+                    turretSetpointDeg = Range.clip(currentAngle, -SOFT_LIMIT_DEG, SOFT_LIMIT_DEG);
+                    angle_tester = turretSetpointDeg;
+                    return;
+                }
+
+                // Last resort: clamp to nearest limit
+                wrappedTarget = Range.clip(wrappedTarget, -SOFT_LIMIT_DEG, SOFT_LIMIT_DEG);
+            }
+        }
+
+        // 🔹 FIX 3: Final safety check before setting setpoint
+        if (Math.abs(wrappedTarget) > SOFT_LIMIT_DEG) {
+            // Emergency abort - something went wrong in the math
+            state = TurretState.MANUAL;
+            turretSetpointDeg = Range.clip(currentAngle, -SOFT_LIMIT_DEG, SOFT_LIMIT_DEG);
+            angle_tester = turretSetpointDeg;
+            return;
+        }
+
+        setSetpointDeg(wrappedTarget);
 
         // Enter SNAP_TO_GOAL state (short inner PID move)
         state = TurretState.SNAP_TO_GOAL;
@@ -334,6 +427,9 @@ public class Turret implements Subsystem {
     public void periodic() {
         double angleNow = getFilteredAngleDeg(); // filtered turret angle
         double power = 0.0;
+
+        // Get the latest Limelight result ONCE so it's in scope everywhere
+        LLResult result = limelight.getLatestResult();
 
         switch (state) {
             case OFF:
@@ -354,34 +450,36 @@ public class Turret implements Subsystem {
 
             case SNAP_TO_GOAL: {
                 // If a tag appears while we're snapping, immediately switch to LL
-                LLResult result = limelight.getLatestResult();
                 if (result != null && result.isValid()) {
                     enableLimelightAim();
                     updateLimelightAim(DT_SEC);
                     power = limelightPower;
-                    break;
-                }
+                } else {
+                    // Otherwise, keep snapping toward the remembered angle
+                    power = anglePidStep(DT_SEC, angleNow);
 
-                // Otherwise, keep snapping toward the remembered angle
-                power = anglePidStep(DT_SEC, angleNow);
+                    // Once we're close enough, stop and go back to MANUAL
+                    if (Math.abs(turretSetpointDeg - angleNow) < SNAP_TOL_DEG) {
+                        power = 0.0;
 
-                // Once we're close enough, stop and go back to MANUAL
-                if (Math.abs(turretSetpointDeg - angleNow) < SNAP_TOL_DEG) {
-                    power = 0.0;
-                    state = TurretState.MANUAL;
+                        // sync MANUAL target to where we snapped
+                        angle_tester = turretSetpointDeg;
+
+                        state = TurretState.MANUAL;
+                    }
                 }
                 break;
             }
         }
 
+        // --- SOFT LIMITS + APPLY POWER ---
         if (state != TurretState.OFF) {
-            // Software endstops using turret angle
-            double softLimit = 140.0; // inside ±145 analog span
 
-            if (angleNow >= softLimit && power > 0) {
+            // Hard stop protection: do not drive further OUT past soft limit
+            if (angleNow >= SOFT_LIMIT_DEG && power > 0) {
                 power = 0.0;
             }
-            if (angleNow <= -softLimit && power < 0) {
+            if (angleNow <= -SOFT_LIMIT_DEG && power < 0) {
                 power = 0.0;
             }
 

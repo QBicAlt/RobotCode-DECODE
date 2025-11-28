@@ -13,6 +13,8 @@ import dev.nextftc.hardware.impl.ServoEx;
 
 import com.acmerobotics.dashboard.config.Config;
 
+import org.firstinspires.ftc.teamcode.util.Data;
+
 @Config
 public class LauncherOuttakeFuckingThing implements Subsystem {
     public static final LauncherOuttakeFuckingThing INSTANCE = new LauncherOuttakeFuckingThing();
@@ -72,7 +74,7 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     private ControlSystem velocityPID;
 
     // We now track target in RPM (not rad/s).
-    private double targetRpm = 0.0;
+    public static double targetRpm = 0.0;
 
     // For optional acceleration feedforward
     private static final double LOOP_DT = 0.02; // 20 ms loop; adjust if your loop timing is different
@@ -98,14 +100,14 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
         setTargetRpm(0.0);
 
         // Start hood at neutral/low angle
-        setTurretAngle(shooterAngle);
+        setAngle(shooterAngle);
     }
 
     /**
      * Set hood angle in DEGREES.
      * Keeps exactly your previous behavior, just cleaned a bit.
      */
-    public void setTurretAngle(double angleDeg) {
+    public void setAngle(double angleDeg) {
         shooterAngle = angleDeg;
 
         // How far from neutral (in hood degrees)?
@@ -156,41 +158,76 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
         return ticksPerSecToRpm(ticksPerSec);
     }
 
+    private static double lerp(double a, double b, double t) {
+        return a + (b - a) * t;
+    }
+
     @Override
     public void periodic() {
         Pose pos = PedroComponent.follower().getPose();
-        // You'll use pos later for shooter table stuff; leaving it alone for now.
 
-        // Keep hood servo tracking shooterAngle from Dashboard (same behavior as before)
-        setTurretAngle(shooterAngle);
+        double distIn = VisionDistanceHelper.distanceToGoalInches(pos);
 
-        // --- MEASURE RPM ---
-        double ticksPerSec = motorOne.getVelocity();  // keep your sign convention
+        // If vision / pose freaks out and returns NaN, just don't touch the setpoints
+            double firstDist = Data.LAUNCHER_POSES[0][0];
+            double lastDist  = Data.LAUNCHER_POSES[Data.LAUNCHER_POSES.length - 1][0];
+
+            // Clamp distance into the calibrated range
+            distIn = Range.clip(distIn, firstDist, lastDist);
+
+            double speed, angle;
+
+            // Find i0, i1 such that:
+            // LAUNCHER_POSES[i0][0] <= distIn <= LAUNCHER_POSES[i1][0]
+            int i1 = 1;
+            while (i1 < Data.LAUNCHER_POSES.length &&
+                    Data.LAUNCHER_POSES[i1][0] < distIn) {
+                i1++;
+            }
+            int i0 = i1 - 1;
+
+            double d0 = Data.LAUNCHER_POSES[i0][0];
+            double d1 = Data.LAUNCHER_POSES[i1][0];
+
+            double t = (Math.abs(d1 - d0) < 1e-6)
+                    ? 0.0
+                    : (distIn - d0) / (d1 - d0);
+
+            double speed0 = Data.LAUNCHER_POSES[i0][1];
+            double speed1 = Data.LAUNCHER_POSES[i1][1];
+            double angle0 = Data.LAUNCHER_POSES[i0][2];
+            double angle1 = Data.LAUNCHER_POSES[i1][2];
+
+            speed = lerp(speed0, speed1, t);
+            angle = lerp(angle0, angle1, t);
+
+            setTargetRpm(speed);
+            setAngle(angle);
+
+
+        // --- rest of your PID + FF code stays the same ---
+        double ticksPerSec = motorOne.getVelocity();
         double measRpm     = ticksPerSecToRpm(ticksPerSec);
 
-        // --- PID IN RPM SPACE ---
         double pidOut = velocityPID.calculate(new KineticState(
                 0.0,
                 measRpm
         ));
 
-        // --- TARGET-SIDE ACCEL (for kA if you want it) ---
         double targetAccelRpmPerSec = (targetRpm - lastTargetRpm) / LOOP_DT;
         lastTargetRpm = targetRpm;
 
-        // --- FEEDFORWARD (RPM-BASED) ---
         double ff = 0.0;
-
         if (Math.abs(targetRpm) > 1e-3) {
             ff += kS * Math.signum(targetRpm);
         }
-
         ff += kV * targetRpm;
-        ff += kA * targetAccelRpmPerSec; // does nothing while kA = 0
+        ff += kA * targetAccelRpmPerSec;
 
         double power = Range.clip(pidOut + ff, -1.0, 1.0);
 
         motorOne.setPower(power);
         motorTwo.setPower(power);
     }
+
 }
