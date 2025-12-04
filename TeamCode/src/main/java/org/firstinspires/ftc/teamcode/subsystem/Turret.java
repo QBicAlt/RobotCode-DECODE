@@ -6,6 +6,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 import dev.nextftc.core.subsystems.Subsystem;
@@ -26,7 +27,8 @@ public class Turret implements Subsystem {
         OFF,
         MANUAL,        // angle setpoint from dashboard/driver
         LIMELIGHT,     // pure LL PID on tx -> power
-        SNAP_TO_GOAL   // short angle PID to remembered goal angle
+        SNAP_TO_GOAL,  // short angle PID to remembered goal angle
+        ODOMETRY_AIM   // New: continuously aim at goal using Pedro Pathing pose
     }
 
     private TurretState state = TurretState.OFF;
@@ -37,6 +39,21 @@ public class Turret implements Subsystem {
     public AnalogInput turretFeedback;
     private IMUEx imu;
     public Limelight3A limelight;
+
+    // --- LED + readiness ---
+    // goBILDA status LED on a servo port (optional)
+    private Servo shootStatusLed;
+
+    // LED positions (Dashboard-tunable)
+    public static double LED_POS_OFF       = 0.00;  // off / idle
+    public static double LED_POS_NOT_READY = 0.25;  // e.g. red / amber
+    public static double LED_POS_READY     = 0.75;  // e.g. green
+
+    // Readiness tolerances (Dashboard-tunable)
+    public static double RPM_TOLERANCE    = 30.0;  // +/- rpm from target
+    public static double TX_SHOOT_TOL_DEG = 1.5;   // tx window to be "aimed"
+
+    private boolean readyForShot = false;
 
     // --- Analog mapping / geometry ---
     // Tune MIN/MAX_VOLTAGE in Dashboard so measured angle roughly matches reality.
@@ -58,7 +75,7 @@ public class Turret implements Subsystem {
     public static double angle_tester = 0.0;
 
     // --- Inner angle PID (used only in MANUAL + SNAP_TO_GOAL) ---
-    public static double kP_angle = 0.011;
+    public static double kP_angle = 0.008;
     public static double kI_angle = 0.0;        // start at 0, add later if needed
     public static double kD_angle = 0.00057;    // if it oscillates a lot, try lowering this
 
@@ -73,7 +90,7 @@ public class Turret implements Subsystem {
     private double lastAngleError    = 0.0;
 
     // --- Limelight PID around tx (pure LL control in LIMELIGHT state) ---
-    public static double kLL_P = -0.010;   // sign based on turret direction
+    public static double kLL_P = -0.00850;   // sign based on turret direction
     public static double kLL_I = 0.0;
     public static double kLL_D = -0.00035;
 
@@ -93,7 +110,7 @@ public class Turret implements Subsystem {
 
     // --- Limelight filtering / alignment ---
     public static double TX_FILTER_ALPHA         = 0.6;
-    public static double LIMELIGHT_X_OFFSET_DEG  = 0;
+    public static double LIMELIGHT_X_OFFSET_DEG  = 3;
     public static double DEADZONE_DEG            = 1.0;
 
     public static double filteredTx = 0.0;
@@ -111,7 +128,7 @@ public class Turret implements Subsystem {
     //   - lockTurretAngleDeg:  turret angle when tx ≈ 0
     // Later:
     //   deltaRobotHeading = currentHeading - lockRobotHeadingDeg
-    //   desiredTurretDeg  = lockTurretAngleDeg - deltaRobotHeading
+    //   desiredTurretDeg  = lockTurretDeg - deltaRobotHeading
     private boolean hasLockSnapshot     = false;
     private double  lockRobotHeadingDeg = 0.0;
     private double  lockTurretAngleDeg  = 0.0;
@@ -131,6 +148,14 @@ public class Turret implements Subsystem {
         imu = new IMUEx("imu", Direction.RIGHT, Direction.FORWARD);
         limelight = ActiveOpMode.hardwareMap().get(Limelight3A.class, "limelight");
         limelight.start();
+
+        // LED mapping is optional – if the servo isn't present it just won't be used
+        try {
+            shootStatusLed = ActiveOpMode.hardwareMap().get(Servo.class, "status_led");
+            shootStatusLed.setPosition(LED_POS_OFF);
+        } catch (Exception e) {
+            shootStatusLed = null;
+        }
 
         filterInitialized = false;
         llIntegral = 0.0;
@@ -234,6 +259,14 @@ public class Turret implements Subsystem {
     public void enableAutoAim(boolean enabled) {
         if (enabled) enableLimelightAim();
         else disableLimelightAim();
+    }
+
+    /**
+     * Use Pedro Pathing pose to aim at the goal coordinates.
+     * Does NOT require seeing the tag, but assumes the robot knows where it is.
+     */
+    public void enableOdometryAim() {
+        state = TurretState.ODOMETRY_AIM;
     }
 
     // For telemetry if you want
@@ -365,7 +398,7 @@ public class Turret implements Subsystem {
         // Wrap to [-180, 180]
         double wrappedTarget = wrapDeg(idealTurretDeg);
 
-        // 🔹 FIX 1: Check if the wrapped angle is outside our physical limits
+        // FIX 1: Check if the wrapped angle is outside our physical limits
         if (Math.abs(wrappedTarget) > SOFT_LIMIT_DEG) {
             // Try the opposite wrap direction (±360°)
             double altTarget = wrappedTarget > 0
@@ -384,7 +417,7 @@ public class Turret implements Subsystem {
                 }
             }
 
-            // 🔹 FIX 2: If STILL outside limits, check if robot rotated too much
+            // FIX 2: If STILL outside limits, check if robot rotated too much
             if (Math.abs(wrappedTarget) > SOFT_LIMIT_DEG) {
                 // Calculate max rotation we can compensate for from current lock position
                 double maxCompensation = SOFT_LIMIT_DEG - Math.abs(lockTurretAngleDeg);
@@ -403,7 +436,7 @@ public class Turret implements Subsystem {
             }
         }
 
-        // 🔹 FIX 3: Final safety check before setting setpoint
+        // FIX 3: Final safety check before setting setpoint
         if (Math.abs(wrappedTarget) > SOFT_LIMIT_DEG) {
             // Emergency abort - something went wrong in the math
             state = TurretState.MANUAL;
@@ -419,6 +452,63 @@ public class Turret implements Subsystem {
 
         angleIntegral  = 0.0;
         lastAngleError = 0.0;
+    }
+
+    // --- Shoot readiness + LED ---
+
+    /**
+     * Call this once per loop from TeleOp, passing:
+     * - flywheel target RPM
+     * - flywheel current RPM
+     * - filtered distance to goal (inches)
+     * - whether your hood/angle is at its target
+     *
+     * This does NOT block anything; it just sets readyForShot + LED.
+     */
+    public void updateShootStatus(double targetRpm,
+                                  double currentRpm,
+                                  double distanceIn) {
+        // 1) RPM readiness
+        boolean rpmReady = false;
+        double rpmError  = Double.POSITIVE_INFINITY;
+        if (targetRpm > 0) {
+            rpmError = Math.abs(currentRpm - targetRpm);
+            rpmReady = rpmError <= RPM_TOLERANCE;
+        }
+
+        // 2) Turret alignment from Limelight tx
+        LLResult result = limelight.getLatestResult();
+        double tx = 999.0;
+        boolean turretAligned = false;
+        boolean hasTag = (result != null && result.isValid());
+        if (hasTag) {
+            tx = result.getTx() - LIMELIGHT_X_OFFSET_DEG;
+            turretAligned = Math.abs(tx) <= TX_SHOOT_TOL_DEG;
+        }
+
+        // OR: If we are using Odometry Aim, check error
+        if (state == TurretState.ODOMETRY_AIM) {
+            turretAligned = Math.abs(turretSetpointDeg - getMeasuredAngleDeg()) < 2.0;
+        }
+
+        // 3) Distance window
+        boolean distanceOk = VisionDistanceHelper.isDistanceInRangeForShot(distanceIn);
+
+        // Final readiness decision
+        readyForShot = rpmReady && turretAligned;
+
+        // Drive LED (if present)
+        if (shootStatusLed != null) {
+            if (readyForShot) {
+                shootStatusLed.setPosition(LED_POS_READY);
+            } else {
+                shootStatusLed.setPosition(LED_POS_NOT_READY);
+            }
+        }
+    }
+
+    public boolean isReadyForShot() {
+        return readyForShot;
     }
 
     // --- Main periodic ---
@@ -448,6 +538,27 @@ public class Turret implements Subsystem {
                 power = limelightPower;
                 break;
 
+            case ODOMETRY_AIM:
+                Pose pose = PedroComponent.follower().getPose();
+                if (pose != null) {
+                    // 1. Get angle to goal in field coordinates (radians)
+                    double goalAngleRad = VisionDistanceHelper.getOdometryAngleToGoalRad(pose);
+
+                    // 2. Get robot heading (radians)
+                    double robotHeadingRad = pose.getHeading();
+
+                    // 3. Turret needs to face: Goal Angle - Robot Heading
+                    double targetRad = goalAngleRad - robotHeadingRad;
+
+                    // 4. Convert to degrees & wrap
+                    double targetDeg = Math.toDegrees(targetRad);
+                    setSetpointDeg(wrapDeg(targetDeg));
+                }
+
+                // Use standard angle PID to get there
+                power = anglePidStep(DT_SEC, angleNow);
+                break;
+
             case SNAP_TO_GOAL: {
                 // If a tag appears while we're snapping, immediately switch to LL
                 if (result != null && result.isValid()) {
@@ -465,7 +576,7 @@ public class Turret implements Subsystem {
                         // sync MANUAL target to where we snapped
                         angle_tester = turretSetpointDeg;
 
-                        state = TurretState.MANUAL;
+                        // state = TurretState.MANUAL;
                     }
                 }
                 break;

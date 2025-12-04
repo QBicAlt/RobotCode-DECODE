@@ -32,27 +32,34 @@ import com.acmerobotics.dashboard.canvas.Canvas;
 @Config
 @TeleOp(name = "Greg TeleOp")
 public class GregTeleOp extends NextFTCOpMode {
+    // Reverted: Define turret as an instance variable so we can create a fresh one
+    private Turret turret;
+
     private DriverControlledCommand driveCmd;
     public static double turretAngle = 0;
 
     private FtcDashboard dashboard;
 
     public GregTeleOp() {
+        // Reverted: Instantiate a NEW turret for this OpMode run
+        turret = new Turret();
+
         addComponents(
                 new PedroComponent(Constants::createFollower),
-                new SubsystemComponent(Turret.INSTANCE),
+                // Pass the specific instance we just created
+                new SubsystemComponent(turret),
                 new SubsystemComponent(Intake.INSTANCE),
                 new SubsystemComponent(LauncherOuttakeFuckingThing.INSTANCE),
                 BindingsComponent.INSTANCE
         );
     }
+
     @Override
     public void onInit() {
         follower().setPose(new Pose(0, 0, 0));
         follower().update();
 
         dashboard = FtcDashboard.getInstance();
-
 
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(0.0);
@@ -61,11 +68,13 @@ public class GregTeleOp extends NextFTCOpMode {
     @Override
     public void onStartButtonPressed() {
         follower().startTeleopDrive();
-        Turret.INSTANCE.enableAutoAim(true);
+        // Use local instance 'turret' instead of static 'Turret.INSTANCE'
+        turret.enableAutoAim(true);
+
         driveCmd = new PedroDriverControlled(
-                Gamepads.gamepad1().leftStickY(),
-                Gamepads.gamepad1().leftStickX(),
-                Gamepads.gamepad1().rightStickX()
+                Gamepads.gamepad1().leftStickY().negate(),
+                Gamepads.gamepad1().leftStickX().negate(),
+                Gamepads.gamepad1().rightStickX().negate()
         );
 
         driveCmd.schedule();
@@ -76,36 +85,28 @@ public class GregTeleOp extends NextFTCOpMode {
         Gamepads.gamepad1().leftTrigger().greaterThan(.5)
                 .whenBecomesTrue(Intake.INSTANCE.intakeTwoPowerFull)
                 .whenBecomesFalse(Intake.INSTANCE.intakeTwoZero)
-                .whenBecomesFalse(new LambdaCommand().setStart(() ->LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)));
-
-
+                .whenBecomesFalse(new LambdaCommand().setStart(() -> LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)));
 
         Gamepads.gamepad1().x()
                 .whenBecomesTrue(Intake.INSTANCE.indexerIn);
 
         Gamepads.gamepad1().y()
                 .whenBecomesTrue(Intake.INSTANCE.indexerOut);
+
         Gamepads.gamepad1().rightTrigger().greaterThan(0.5)
                 .whenBecomesTrue(new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(LauncherOuttakeFuckingThing.LAUNCH_RPM)))
                 .whenBecomesFalse(new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(LauncherOuttakeFuckingThing.SLOW_RPM)));
 
-
         Gamepads.gamepad1().rightBumper()
                 .whenBecomesTrue(
-                        new LambdaCommand().setStart(Turret.INSTANCE::snapToRememberedGoalAndEnable))
-                .whenBecomesTrue(new LambdaCommand().setStart(() ->LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)));
+                        // Use local instance method reference
+                        new LambdaCommand().setStart(turret::snapToRememberedGoalAndEnable))
+                .whenBecomesTrue(new LambdaCommand().setStart(() -> LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)));
+
         Gamepads.gamepad1().circle()
-                .whenBecomesTrue(new LambdaCommand().setStart(() ->Turret.INSTANCE.manual()));
-
-
-
-
-                        //       .whenBecomesFalse(new LambdaCommand().setStart(() ->
-           //             turret.enableAutoAim(false)));
-
-
+                .whenBecomesTrue(new LambdaCommand().setStart(() -> turret.manual()));
     }
 
     @Override
@@ -114,9 +115,10 @@ public class GregTeleOp extends NextFTCOpMode {
 
         Pose pedroPose = follower().getPose();
 
+        // Use local instance 'turret'
+        LLResult result = turret.limelight.getLatestResult();
 
-        LLResult result = Turret.INSTANCE.limelight.getLatestResult();
-        double turretAngleDeg = Turret.INSTANCE.getMeasuredAngleDeg();  // from your turret class
+        double turretAngleDeg = turret.getMeasuredAngleDeg();
 
         double distLL = VisionDistanceHelper.distanceToGoalFromLimelight(result, turretAngleDeg);
 
@@ -143,17 +145,15 @@ public class GregTeleOp extends NextFTCOpMode {
         telemetry.addData("LL distance to goal (in)", distLL);
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
         telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
-        telemetry.addData("turret_angle_deg", Turret.INSTANCE.getMeasuredAngleDeg());
-        telemetry.addData("turret_volts", Turret.INSTANCE.turretFeedback.getVoltage());
-        telemetry.addData("turret_state", Turret.INSTANCE.turretStateString());
-        telemetry.addData("imu", Turret.INSTANCE.getRobotHeadingDeg());
+        telemetry.addData("turret_angle_deg", turret.getMeasuredAngleDeg());
+        telemetry.addData("turret_volts", turret.turretFeedback.getVoltage());
+        telemetry.addData("turret_state", turret.turretStateString());
+        telemetry.addData("imu", turret.getRobotHeadingDeg());
         telemetry.addData("X", pedroPose.getX());
         telemetry.addData("Y", pedroPose.getY());
 
         telemetry.update();
 
         dashboard.sendTelemetryPacket(packet);
-
     }
-
 }
