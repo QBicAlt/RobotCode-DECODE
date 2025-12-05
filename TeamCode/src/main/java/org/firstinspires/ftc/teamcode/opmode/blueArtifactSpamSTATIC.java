@@ -107,9 +107,32 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(55.000, 84.000),
-                                                new Pose(58.932, 54.603),
-                                                new Pose(25.651, 57.764)
+                                                new Pose(50.000, 84.000),
+                                                new Pose(56.934, 57.101),
+                                                new Pose(23.306, 58.932),
+                                                new Pose(11.820, 58.266),
+                                                new Pose(16.150, 56.931)
+                                        )
+                                )
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .build(),
+                        .6,
+                        false
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy());
+
+    public static final Command grabsecondgate5 = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(
+                                        new BezierCurve(
+                                                new Pose(14.150, 56.931),
+                                                new Pose(26.969, 54.437),
+                                                new Pose(31.464, 62.594),
+                                                new Pose(15.000, 69.420)
                                         )
                                 )
                                 .setConstantHeadingInterpolation(Math.toRadians(180))
@@ -128,7 +151,7 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(25.651, 57.764),
+                                                new Pose(15.000, 69.420),
                                                 new Pose(55.000, 84.000)
                                         )
                                 )
@@ -140,72 +163,29 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
     // 6) grab from gate
-    public static final Command grabfromgate6 = new LambdaCommand()
+    public static final Command  grabthird1_7 = new LambdaCommand()
             .setStart(() -> {
                 Follower follower = PedroComponent.follower();
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(
-                                                new Pose(55.000, 84.000),
-                                                new Pose(15.000, 58.000)
-                                        )
+                                        new BezierLine(new Pose(55.000, 84.000), new Pose(42.617, 36.000))
                                 )
-                                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
-                                .build()
-                );
-            })
-            .setIsDone(() -> !PedroComponent.follower().isBusy());
+                                .setTValueConstraint(.95)
 
-    public static final Command grabfromgate2_6 = new LambdaCommand()
-            .setStart(() -> {
-                Follower follower = PedroComponent.follower();
-                follower.followPath(
-                        follower.pathBuilder()
-                                .addPath(
-                                        new BezierCurve(
-                                                new Pose(15.000, 58.000),
-                                                new Pose(31.797, 54.603),
-                                                new Pose(9, 54.768)
-                                        )
-                                )
-                                .setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
                                 .build()
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
     // 7) score from gate
-    public static final Command scoregate7 = new LambdaCommand()
+    public static final Command grabthird2_8 = new LambdaCommand()
             .setStart(() -> {
                 Follower follower = PedroComponent.follower();
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(
-                                                new Pose(9.000, 54.768),
-                                                new Pose(50.000, 84.000)
-                                        )
-                                )
-                                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-                                .build()
-                );
-            })
-            .setIsDone(() -> !PedroComponent.follower().isBusy());
-
-    // 8) grab from red zone
-    public static final Command grabfromredzone8 = new LambdaCommand()
-            .setStart(() -> {
-                Follower follower = PedroComponent.follower();
-                follower.followPath(
-                        follower.pathBuilder()
-                                .addPath(
-                                        new BezierCurve(
-                                                new Pose(50.000, 84.000),
-                                                new Pose(31.131, 75.579),
-                                                new Pose(31.131, 48.111),
-                                                new Pose(7.000, 50.000)
-                                        )
+                                        new BezierLine(new Pose(42.617, 36.000), new Pose(16.000, 36.000))
                                 )
                                 .setTangentHeadingInterpolation()
                                 .build()
@@ -213,25 +193,21 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
-    // 9) score from red zone
-    public static final Command scorefromredzone9 = new LambdaCommand()
+    public static final Command scorethird = new LambdaCommand()
             .setStart(() -> {
                 Follower follower = PedroComponent.follower();
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierCurve(
-                                                new Pose(7.000, 50.000),
-                                                new Pose(23.473, 47.112),
-                                                new Pose(50.000, 84.000)
-                                        )
+                                        new BezierLine(new Pose(16.000, 36.000), new Pose(55.000, 84.000))
                                 )
-                                .setTangentHeadingInterpolation()
+                                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
                                 .setReversed()
                                 .build()
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
+
 
     @Override
     public void onInit() {
@@ -298,9 +274,12 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 Intake.INSTANCE.intakeTwoPowerFull,
 
                 grabsecond4,
+                grabsecondgate5,
+                new Delay(1),
                 Intake.INSTANCE.intakeTwoZero,
                 scoresecond5,
                 new LambdaCommand().setStart(() -> Turret.INSTANCE.snapToRememberedGoalAndEnable()),
+
                 new Delay(.75),
 
                 new LambdaCommand().setStart(() -> LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
@@ -308,16 +287,17 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 new Delay(1.5),
                 Intake.INSTANCE.intakeTwoZero,
                 new LambdaCommand().setStart(() -> LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)),
+                grabthird1_7,
                 Intake.INSTANCE.intakeTwoPowerFull,
-                grabfromgate6,
-                new Delay(3),
-                grabfromgate2_6,
+                grabthird2_8,
                 new Delay(.75),
                 Intake.INSTANCE.intakeTwoZero,
-                scoregate7,
+                Intake.INSTANCE.intakeOneZero,
+                scorethird,
                 new LambdaCommand().setStart(() -> Turret.INSTANCE.snapToRememberedGoalAndEnable()),
                 new Delay(1),
                 new LambdaCommand().setStart(() -> LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
+                Intake.INSTANCE.intakeOnePowerFull,
                 Intake.INSTANCE.intakeTwoPowerFull
 
 
