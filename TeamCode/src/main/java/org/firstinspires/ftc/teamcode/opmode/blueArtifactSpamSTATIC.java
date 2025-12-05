@@ -281,7 +281,6 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 new LambdaCommand().setStart(() -> Turret.INSTANCE.snapToRememberedGoalAndEnable()),
 
                 new Delay(.75),
-
                 new LambdaCommand().setStart(() -> LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
                 Intake.INSTANCE.intakeTwoPowerFull,
                 new Delay(1.5),
