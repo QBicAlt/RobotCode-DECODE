@@ -25,10 +25,10 @@ import dev.nextftc.core.components.SubsystemComponent;
 import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.ftc.NextFTCOpMode;
 
-@Autonomous(name = "blueArtifactSpamSTATIC")
-public class blueArtifactSpamSTATIC extends NextFTCOpMode {
+@Autonomous(name = "blueArtifactSpamClose")
+public class blueArtifactSpamClose extends NextFTCOpMode {
 
-    public blueArtifactSpamSTATIC() {
+    public blueArtifactSpamClose() {
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(Turret.INSTANCE),
@@ -192,7 +192,7 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                                 .setTangentHeadingInterpolation()
 
                                 .build(),
-                .6, false);
+                        .6, false);
 
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());

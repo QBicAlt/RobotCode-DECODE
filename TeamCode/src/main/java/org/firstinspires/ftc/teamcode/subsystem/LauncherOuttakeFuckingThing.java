@@ -65,6 +65,19 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     private static final double LOOP_DT = 0.02;
     private double lastTargetRpm = 0.0;
 
+    // --- Fallback when Limelight / distance is bad ---
+    public static double FALLBACK_RPM   = 2500;
+    public static double FALLBACK_ANGLE = 25.0;
+
+    // How long a vision solution is considered "fresh"
+    public static double VISION_TIMEOUT_SEC = 0.4;
+
+    // Only use fallback when this is true (so TeleOp can leave it off)
+    public static boolean USE_FALLBACK = false;
+
+    private boolean haveFreshVisionSolution = false;
+    private double timeSinceLastVision      = 999.0;
+
     public double getTargetRpm() {
         return targetRpm;
     }
@@ -85,6 +98,8 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
 
         // Default to Auto Calculation on startup
         autoCalculate = true;
+        haveFreshVisionSolution = false;
+        timeSinceLastVision = 999.0;
     }
 
     // --- Manual Overrides ---
@@ -132,9 +147,35 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
         return a + (b - a) * t;
     }
 
+    // --- Fallback Helpers ---
+
+    /** Do we currently have a good Limelight-based solution? */
+    public boolean hasFreshVisionSolution() {
+        return autoCalculate && haveFreshVisionSolution && timeSinceLastVision < VISION_TIMEOUT_SEC;
+    }
+
+    /**
+     * Configure what RPM/angle to fall back to if auto-calculation
+     * doesn't have a fresh distance.
+     */
+    public void setFallback(double rpm, double angleDeg) {
+        FALLBACK_RPM   = rpm;
+        FALLBACK_ANGLE = angleDeg;
+
+        // If auto is on but we DON'T have a fresh vision solution right now,
+        // immediately use the fallback so it spins up early.
+        if (autoCalculate && !hasFreshVisionSolution()) {
+            setTargetRpm(FALLBACK_RPM);
+            setAngle(FALLBACK_ANGLE);
+        }
+    }
+
     @Override
     public void periodic() {
         // --- 1. AUTO CALCULATION LOGIC ---
+        // Age the last vision solution
+        timeSinceLastVision += LOOP_DT;
+
         if (autoCalculate) {
             // Get Limelight result from Turret (Singleton)
             LLResult result = Turret.INSTANCE.runLimelight();
@@ -145,6 +186,9 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
 
             // Only update if we have a valid distance
             if (!Double.isNaN(distIn) && distIn > 0) {
+                // We have a valid distance -> mark fresh
+                haveFreshVisionSolution = true;
+                timeSinceLastVision     = 0.0;
 
                 double firstDist = Data.LAUNCHER_POSES[0][0];
                 double lastDist  = Data.LAUNCHER_POSES[Data.LAUNCHER_POSES.length - 1][0];
@@ -179,7 +223,19 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
                 // Set the targets automatically
                 setTargetRpm(speed);
                 setAngle(angle);
+            } else {
+                // This loop had no valid distance
+                haveFreshVisionSolution = false;
+
+                // If we've gone "too long" without vision, actively fall back
+                if (USE_FALLBACK && timeSinceLastVision > VISION_TIMEOUT_SEC) {
+                    setTargetRpm(FALLBACK_RPM);
+                    setAngle(FALLBACK_ANGLE);
+                }
             }
+        } else {
+            // In pure manual mode: no auto solution
+            haveFreshVisionSolution = false;
         }
 
         // --- 2. MOTOR CONTROL (Runs for both Manual and Auto) ---
