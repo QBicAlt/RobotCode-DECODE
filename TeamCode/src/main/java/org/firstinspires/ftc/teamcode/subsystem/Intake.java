@@ -15,7 +15,7 @@ public class Intake implements Subsystem {
     public final ServoEx indexer = new ServoEx("indexer");
 
     public final Command intakeOnePowerFull = new SetPower(intakeOne, 1).requires(this);
-    public final Command intakeTwoPowerHalf = new SetPower(intakeTwo, .5).requires(this);
+    public final Command intakeTwoPower7 = new SetPower(intakeTwo, .7).requires(this);
     public final Command intakeTwoPowerFull = new SetPower(intakeTwo, 1).requires(this);
 
     public final Command intakeTwoZero = new SetPower(intakeTwo, 0).requires(this);
@@ -23,4 +23,17 @@ public class Intake implements Subsystem {
 
     public final Command indexerIn = new SetPosition(indexer, .04).requires(this);
     public final Command indexerOut = new SetPosition(indexer, .77).requires(this);
+
+    @Override
+    public void initialize() {
+        indexer.setPosition(.04);
+    }
+
+    @Override
+    public void periodic() {
+        indexer.setPosition(.04);
+
+    }
 }
+
+

@@ -13,7 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 public class VisionDistanceHelper {
 
     // Pedro coords of the GOAL tag (inches) – tune these once it's roughly right
-    public static double GOAL_TAG_X_IN = 144 - 127.64;
+    public static double GOAL_TAG_X_IN =  127.64;
     public static double GOAL_TAG_Y_IN = 130.37;
 
     // Distance from robot center (turret pivot) to Limelight lens in inches

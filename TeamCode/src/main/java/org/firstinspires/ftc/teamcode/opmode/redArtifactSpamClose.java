@@ -221,6 +221,8 @@ public class redArtifactSpamClose extends NextFTCOpMode {
 
         // 2. ENABLE Auto Calculation for RPM/Angle and fallback (only for this auto)
         LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+        Turret.INSTANCE.limelight.pipelineSwitch(0);
+
 
         LLResult result = Turret.INSTANCE.runLimelight();
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
@@ -233,6 +235,8 @@ public class redArtifactSpamClose extends NextFTCOpMode {
         follower.setPose(new Pose(17.8, 118, Math.toRadians(144)).mirror());
 
         Command auto = new SequentialGroup(
+                Intake.INSTANCE.intakeOneZero,
+                Intake.INSTANCE.intakeTwoZero,
                 // Spin up + clamp for first shot
                 Intake.INSTANCE.indexerIn,
                 new LambdaCommand().setStart(() ->

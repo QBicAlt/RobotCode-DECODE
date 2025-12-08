@@ -149,10 +149,10 @@ public class Turret implements Subsystem {
         limelight = ActiveOpMode.hardwareMap().get(Limelight3A.class, "limelight");
         limelight.start();
 
+
         // LED mapping is optional – if the servo isn't present it just won't be used
         try {
             shootStatusLed = ActiveOpMode.hardwareMap().get(Servo.class, "status_led");
-            shootStatusLed.setPosition(LED_POS_OFF);
         } catch (Exception e) {
             shootStatusLed = null;
         }
@@ -324,6 +324,8 @@ public class Turret implements Subsystem {
             limelightPower = 0.0;
             return;
         }
+        shootStatusLed.setPosition(.277);
+
 
         double rawTx = result.getTx();
         double tx    = rawTx - LIMELIGHT_X_OFFSET_DEG;
@@ -334,6 +336,7 @@ public class Turret implements Subsystem {
 
         // Deadzone: close enough to center
         if (Math.abs(filteredTx) < DEADZONE_DEG) {
+            shootStatusLed.setPosition(.5);
             limelightPower = 0.0;
 
             double turretAngle  = getMeasuredAngleDeg();
@@ -465,51 +468,6 @@ public class Turret implements Subsystem {
      *
      * This does NOT block anything; it just sets readyForShot + LED.
      */
-    public void updateShootStatus(double targetRpm,
-                                  double currentRpm,
-                                  double distanceIn) {
-        // 1) RPM readiness
-        boolean rpmReady = false;
-        double rpmError  = Double.POSITIVE_INFINITY;
-        if (targetRpm > 0) {
-            rpmError = Math.abs(currentRpm - targetRpm);
-            rpmReady = rpmError <= RPM_TOLERANCE;
-        }
-
-        // 2) Turret alignment from Limelight tx
-        LLResult result = limelight.getLatestResult();
-        double tx = 999.0;
-        boolean turretAligned = false;
-        boolean hasTag = (result != null && result.isValid());
-        if (hasTag) {
-            tx = result.getTx() - LIMELIGHT_X_OFFSET_DEG;
-            turretAligned = Math.abs(tx) <= TX_SHOOT_TOL_DEG;
-        }
-
-        // OR: If we are using Odometry Aim, check error
-        if (state == TurretState.ODOMETRY_AIM) {
-            turretAligned = Math.abs(turretSetpointDeg - getMeasuredAngleDeg()) < 2.0;
-        }
-
-        // 3) Distance window
-        boolean distanceOk = VisionDistanceHelper.isDistanceInRangeForShot(distanceIn);
-
-        // Final readiness decision
-        readyForShot = rpmReady && turretAligned;
-
-        // Drive LED (if present)
-        if (shootStatusLed != null) {
-            if (readyForShot) {
-                shootStatusLed.setPosition(LED_POS_READY);
-            } else {
-                shootStatusLed.setPosition(LED_POS_NOT_READY);
-            }
-        }
-    }
-
-    public boolean isReadyForShot() {
-        return readyForShot;
-    }
 
     // --- Main periodic ---
 

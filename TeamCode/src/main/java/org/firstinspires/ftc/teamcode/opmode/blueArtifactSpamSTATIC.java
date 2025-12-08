@@ -223,6 +223,8 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
         LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
 
         LLResult result = Turret.INSTANCE.runLimelight();
+        Turret.INSTANCE.limelight.pipelineSwitch(1);
+
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
     }
 
@@ -233,6 +235,8 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
         follower.setPose(new Pose(17.8, 118, Math.toRadians(144)));
 
         Command auto = new SequentialGroup(
+                Intake.INSTANCE.intakeOneZero,
+                Intake.INSTANCE.intakeTwoZero,
                 // Spin up + clamp for first shot
                 Intake.INSTANCE.indexerIn,
                 new LambdaCommand().setStart(() ->

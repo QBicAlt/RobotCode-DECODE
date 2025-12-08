@@ -221,6 +221,8 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
 
         // 2. ENABLE Auto Calculation for RPM/Angle and fallback (only for this auto)
         LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+        Turret.INSTANCE.limelight.pipelineSwitch(1);
+
 
         LLResult result = Turret.INSTANCE.runLimelight();
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
