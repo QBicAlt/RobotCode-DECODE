@@ -26,9 +26,9 @@ import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.ftc.NextFTCOpMode;
 
 @Autonomous(name = "redCornerSpam")
-public class redCornerSpam extends NextFTCOpMode {
+public class RedCornerSpam extends NextFTCOpMode {
 
-    public redCornerSpam() {
+    public RedCornerSpam() {
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(Turret.INSTANCE),

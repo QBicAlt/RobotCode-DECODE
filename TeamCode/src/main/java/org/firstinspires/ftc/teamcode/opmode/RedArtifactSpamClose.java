@@ -25,10 +25,10 @@ import dev.nextftc.core.components.SubsystemComponent;
 import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.ftc.NextFTCOpMode;
 
-@Autonomous(name = "redArtifactSpamSTATIC")
-public class redArtifactSpamSTATIC extends NextFTCOpMode {
+@Autonomous(name = "redArtifactSpamClose")
+public class RedArtifactSpamClose extends NextFTCOpMode {
 
-    public redArtifactSpamSTATIC() {
+    public RedArtifactSpamClose() {
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(Turret.INSTANCE),
@@ -66,7 +66,7 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                                         new BezierCurve(
                                                 new Pose(48.000, 96.000).mirror(),
                                                 new Pose(69.753, 81.739).mirror(),
-                                                new Pose(15.000, 84.000).mirror()
+                                                new Pose(19.000, 84.000).mirror()
                                         )
                                 )
                                 .setConstantHeadingInterpolation(Math.toRadians(0))
@@ -85,7 +85,7 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(15.000, 84.000).mirror(),
+                                                new Pose(19.000, 84.000).mirror(),
                                                 new Pose(55.000, 84.000).mirror()
                                         )
                                 )
@@ -222,8 +222,6 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
         // 2. ENABLE Auto Calculation for RPM/Angle and fallback (only for this auto)
         LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
         Turret.INSTANCE.limelight.pipelineSwitch(0);
-        Turret.INSTANCE.LIMELIGHT_X_OFFSET_DEG = -3;
-
 
 
         LLResult result = Turret.INSTANCE.runLimelight();
@@ -252,6 +250,7 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                 new LambdaCommand().setStart(() -> Turret.INSTANCE.enableAutoAim(true)),
 
                 Intake.INSTANCE.intakeOnePowerFull,
+                Intake.INSTANCE.intakeTwoZero,
 
                 // Drive out to score first artifact
                 scoreFirst1,

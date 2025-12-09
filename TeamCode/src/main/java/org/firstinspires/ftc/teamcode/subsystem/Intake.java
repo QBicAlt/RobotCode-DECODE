@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystem;
 
 import dev.nextftc.core.commands.Command;
+import dev.nextftc.core.commands.groups.SequentialGroup;
 import dev.nextftc.core.subsystems.Subsystem;
 import dev.nextftc.hardware.impl.MotorEx;
 import dev.nextftc.hardware.impl.ServoEx;
@@ -20,6 +21,9 @@ public class Intake implements Subsystem {
 
     public final Command intakeTwoZero = new SetPower(intakeTwo, 0).requires(this);
     public final Command intakeOneZero = new SetPower(intakeOne, 0).requires(this);
+
+    public final Command intakeOn = new SequentialGroup(intakeOnePowerFull, intakeTwoPowerFull);
+    public final Command intakeOff = new SequentialGroup(intakeOneZero, intakeTwoZero);
 
     public final Command indexerIn = new SetPosition(indexer, .04).requires(this);
     public final Command indexerOut = new SetPosition(indexer, .77).requires(this);

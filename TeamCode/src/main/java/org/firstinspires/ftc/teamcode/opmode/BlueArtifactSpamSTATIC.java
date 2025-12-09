@@ -25,10 +25,10 @@ import dev.nextftc.core.components.SubsystemComponent;
 import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.ftc.NextFTCOpMode;
 
-@Autonomous(name = "blueArtifactSpamClose")
-public class blueArtifactSpamClose extends NextFTCOpMode {
+@Autonomous(name = "blueArtifactSpamSTATIC")
+public class BlueArtifactSpamSTATIC extends NextFTCOpMode {
 
-    public blueArtifactSpamClose() {
+    public BlueArtifactSpamSTATIC() {
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(Turret.INSTANCE),
@@ -192,7 +192,7 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
                                 .setTangentHeadingInterpolation()
 
                                 .build(),
-                        .6, false);
+                .6, false);
 
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
@@ -221,10 +221,10 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
 
         // 2. ENABLE Auto Calculation for RPM/Angle and fallback (only for this auto)
         LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
-        Turret.INSTANCE.limelight.pipelineSwitch(1);
-
 
         LLResult result = Turret.INSTANCE.runLimelight();
+        Turret.INSTANCE.limelight.pipelineSwitch(1);
+
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
     }
 
@@ -235,6 +235,8 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
         follower.setPose(new Pose(17.8, 118, Math.toRadians(144)));
 
         Command auto = new SequentialGroup(
+                Intake.INSTANCE.intakeOneZero,
+                Intake.INSTANCE.intakeTwoZero,
                 // Spin up + clamp for first shot
                 Intake.INSTANCE.indexerIn,
                 new LambdaCommand().setStart(() ->
