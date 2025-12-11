@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.opmode;
 
+import static dev.nextftc.extensions.pedro.PedroComponent.follower;
+
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -16,6 +20,7 @@ import org.firstinspires.ftc.teamcode.subsystem.VisionDistanceHelper;
 
 import java.util.List;
 
+import dev.nextftc.bindings.BindingManager;
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.commands.delays.Delay;
 import dev.nextftc.core.commands.groups.SequentialGroup;
@@ -71,8 +76,27 @@ public class redArtifactSpamClose extends NextFTCOpMode {
                                 )
                                 .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build(),
-                        .6,
+                        .8,
                         false
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy());
+
+
+    public static final Command OpenGateFirst2 = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(
+                                        new BezierCurve(
+                                                new Pose(19.000, 84.000).mirror(),
+                                                new Pose(37.124, 76.911).mirror(),
+                                                new Pose(15.815, 74.000).mirror()
+                                        )
+                                )
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
+                                .build()
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
@@ -85,7 +109,7 @@ public class redArtifactSpamClose extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(19.000, 84.000).mirror(),
+                                                new Pose(15.815, 74.000).mirror(),
                                                 new Pose(55.000, 84.000).mirror()
                                         )
                                 )
@@ -96,7 +120,6 @@ public class redArtifactSpamClose extends NextFTCOpMode {
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
-    // 4) grab second stack
     public static final Command grabsecond4 = new LambdaCommand()
             .setStart(() -> {
                 Follower follower = PedroComponent.follower();
@@ -109,33 +132,12 @@ public class redArtifactSpamClose extends NextFTCOpMode {
                                                 new Pose(40.786, 60.264).mirror(),
                                                 new Pose(21.309, 60.097).mirror(),
                                                 new Pose(43.616, 58.765).mirror(),
-                                                new Pose(14.150, 59.931).mirror()
+                                                new Pose(11, 57).mirror()
                                         )
                                 )
                                 .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build(),
-                        .6,
-                        false
-                );
-            })
-            .setIsDone(() -> !PedroComponent.follower().isBusy());
-
-    public static final Command grabsecondgate5 = new LambdaCommand()
-            .setStart(() -> {
-                Follower follower = PedroComponent.follower();
-                follower.followPath(
-                        follower.pathBuilder()
-                                .addPath(
-                                        new BezierCurve(
-                                                new Pose(19.150, 56.931).mirror(),
-                                                new Pose(26.969, 54.437).mirror(),
-                                                new Pose(31.464, 62.594).mirror(),
-                                                new Pose(15.000, 69.420).mirror()
-                                        )
-                                )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
-                                .build(),
-                        .6,
+                        .8,
                         false
                 );
             })
@@ -149,7 +151,7 @@ public class redArtifactSpamClose extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(15.000, 69.420).mirror(),
+                                                new Pose(11.000, 57).mirror(),
                                                 new Pose(55.000, 84.000).mirror()
                                         )
                                 )
@@ -192,7 +194,7 @@ public class redArtifactSpamClose extends NextFTCOpMode {
                                 .setTangentHeadingInterpolation()
 
                                 .build(),
-                        .6, false);
+                        .8, false);
 
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
@@ -207,7 +209,7 @@ public class redArtifactSpamClose extends NextFTCOpMode {
                                                 new Pose(55.000, 84.000).mirror())
 
                                 )
-                                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
+                                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(45))
                                 .build()
                 );
             })
@@ -217,11 +219,18 @@ public class redArtifactSpamClose extends NextFTCOpMode {
     @Override
     public void onInit() {
         // 1. DISABLE Relocalization globally
+       // Turret.INSTANCE.updateLimelightAim(.02);
+        Turret.INSTANCE.enableAutoAim(true);
+        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
+
         VisionDistanceHelper.RELOCALIZATION_ENABLED = false;
+        VisionDistanceHelper.GOAL_TAG_X_IN =  127.64;
+
 
         // 2. ENABLE Auto Calculation for RPM/Angle and fallback (only for this auto)
-        LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
         Turret.INSTANCE.limelight.pipelineSwitch(0);
+        Turret.INSTANCE.LIMELIGHT_X_OFFSET_DEG = -3;
+
 
 
         LLResult result = Turret.INSTANCE.runLimelight();
@@ -230,15 +239,19 @@ public class redArtifactSpamClose extends NextFTCOpMode {
 
     @Override
     public void onStartButtonPressed() {
+        LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+        LauncherOuttakeFuckingThing.autoCalculate = true;
+
         // Tell Pedro where we actually are at the start (artifact pile)
         Follower follower = PedroComponent.follower();
         follower.setPose(new Pose(17.8, 118, Math.toRadians(144)).mirror());
 
         Command auto = new SequentialGroup(
+                Intake.INSTANCE.indexerIn,
+
                 Intake.INSTANCE.intakeOneZero,
                 Intake.INSTANCE.intakeTwoZero,
                 // Spin up + clamp for first shot
-                Intake.INSTANCE.indexerIn,
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
@@ -272,15 +285,15 @@ public class redArtifactSpamClose extends NextFTCOpMode {
 
                 // Go grab first stack
                 grabfirst2,
+                OpenGateFirst2,
+                new Delay(.5),
                 Intake.INSTANCE.intakeTwoZero,
 
                 // Drive back to score first stack
                 scorefirst3,
 
                 // For this shot, use a tuned fallback if vision is missing
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
-                ),
+
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
@@ -300,17 +313,13 @@ public class redArtifactSpamClose extends NextFTCOpMode {
 
                 // Go grab second stack
                 grabsecond4,
-                grabsecondgate5,
-                new Delay(1.5),
                 Intake.INSTANCE.intakeTwoZero,
 
                 // Drive back to score second stack
                 scoresecond5,
 
                 // Second stack shot fallback
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
-                ),
+
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
@@ -330,7 +339,6 @@ public class redArtifactSpamClose extends NextFTCOpMode {
                 grabthird1_7,
                 Intake.INSTANCE.intakeTwoPowerFull,
                 grabthird2_8,
-                new Delay(.75),
                 Intake.INSTANCE.intakeTwoZero,
                 Intake.INSTANCE.intakeOneZero,
 
@@ -353,4 +361,35 @@ public class redArtifactSpamClose extends NextFTCOpMode {
 
         auto.schedule();
     }
+
+    public void onUpdate() {
+
+        BindingManager.update();
+
+        Pose pedroPose = follower().getPose();
+
+        // Use local instance 'turret'
+        LLResult result = Turret.INSTANCE.limelight.getLatestResult();
+
+        double turretAngleDeg = Turret.INSTANCE.getMeasuredAngleDeg();
+
+        double distLL = VisionDistanceHelper.filteredDistanceToGoalFromLimelight(result, turretAngleDeg);
+
+        double x = pedroPose.getX();       // assumed inches in Pedro frame
+        double y = pedroPose.getY();
+        double h = pedroPose.getHeading(); // radians
+
+        telemetry.addData("LL distance to goal (in)", distLL);
+        telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
+        telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
+        telemetry.addData("turret_angle_deg", Turret.INSTANCE.getMeasuredAngleDeg());
+        telemetry.addData("turret_volts", Turret.INSTANCE.turretFeedback.getVoltage());
+        telemetry.addData("turret_state", Turret.INSTANCE.turretStateString());
+        telemetry.addData("imu", Turret.INSTANCE.getRobotHeadingDeg());
+        telemetry.addData("X", pedroPose.getX());
+        telemetry.addData("Y", pedroPose.getY());
+
+        telemetry.update();
+    }
+
 }

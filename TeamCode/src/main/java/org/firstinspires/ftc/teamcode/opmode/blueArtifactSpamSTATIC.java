@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmode;
 
+import static dev.nextftc.extensions.pedro.PedroComponent.follower;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -16,6 +18,7 @@ import org.firstinspires.ftc.teamcode.subsystem.VisionDistanceHelper;
 
 import java.util.List;
 
+import dev.nextftc.bindings.BindingManager;
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.commands.delays.Delay;
 import dev.nextftc.core.commands.groups.SequentialGroup;
@@ -218,9 +221,16 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
     public void onInit() {
         // 1. DISABLE Relocalization globally
         VisionDistanceHelper.RELOCALIZATION_ENABLED = false;
+        Turret.INSTANCE.updateLimelightAim(.02);
+        Turret.INSTANCE.enableAutoAim(true);
+        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
+
+        VisionDistanceHelper.GOAL_TAG_X_IN =  144- 127.64;
+
+
 
         // 2. ENABLE Auto Calculation for RPM/Angle and fallback (only for this auto)
-        LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+      //  LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
 
         LLResult result = Turret.INSTANCE.runLimelight();
         Turret.INSTANCE.limelight.pipelineSwitch(1);
@@ -230,6 +240,9 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
 
     @Override
     public void onStartButtonPressed() {
+        LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+        LauncherOuttakeFuckingThing.autoCalculate = true;
+
         // Tell Pedro where we actually are at the start (artifact pile)
         Follower follower = PedroComponent.follower();
         follower.setPose(new Pose(17.8, 118, Math.toRadians(144)));
@@ -244,7 +257,7 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 ),
                 // For the first scoring position: if vision is dead, use 2500 / 25
                 new LambdaCommand().setStart(() -> {
-                    LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27);
+                  //  LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27);
                     LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
                 }),
                 new LambdaCommand().setStart(() -> Turret.INSTANCE.enableAutoAim(true)),
@@ -278,9 +291,7 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 scorefirst3,
 
                 // For this shot, use a tuned fallback if vision is missing
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
-                ),
+
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
@@ -307,10 +318,7 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 // Drive back to score second stack
                 scoresecond5,
 
-                // Second stack shot fallback
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
-                ),
+
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
@@ -337,9 +345,7 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 scorethird,
 
                 // Third shot fallback
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
-                ),
+
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
@@ -352,5 +358,34 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
         );
 
         auto.schedule();
+    }
+    public void onUpdate() {
+
+        BindingManager.update();
+
+        Pose pedroPose = follower().getPose();
+
+        // Use local instance 'turret'
+        LLResult result = Turret.INSTANCE.limelight.getLatestResult();
+
+        double turretAngleDeg = Turret.INSTANCE.getMeasuredAngleDeg();
+
+        double distLL = VisionDistanceHelper.filteredDistanceToGoalFromLimelight(result, turretAngleDeg);
+
+        double x = pedroPose.getX();       // assumed inches in Pedro frame
+        double y = pedroPose.getY();
+        double h = pedroPose.getHeading(); // radians
+
+        telemetry.addData("LL distance to goal (in)", distLL);
+        telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
+        telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
+        telemetry.addData("turret_angle_deg", Turret.INSTANCE.getMeasuredAngleDeg());
+        telemetry.addData("turret_volts", Turret.INSTANCE.turretFeedback.getVoltage());
+        telemetry.addData("turret_state", Turret.INSTANCE.turretStateString());
+        telemetry.addData("imu", Turret.INSTANCE.getRobotHeadingDeg());
+        telemetry.addData("X", pedroPose.getX());
+        telemetry.addData("Y", pedroPose.getY());
+
+        telemetry.update();
     }
 }

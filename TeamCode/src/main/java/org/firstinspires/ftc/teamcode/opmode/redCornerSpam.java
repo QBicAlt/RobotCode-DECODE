@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmode;
 
+import static dev.nextftc.extensions.pedro.PedroComponent.follower;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -16,6 +18,7 @@ import org.firstinspires.ftc.teamcode.subsystem.VisionDistanceHelper;
 
 import java.util.List;
 
+import dev.nextftc.bindings.BindingManager;
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.commands.groups.SequentialGroup;
 import dev.nextftc.core.commands.utility.LambdaCommand;
@@ -182,6 +185,10 @@ public class redCornerSpam extends NextFTCOpMode {
     @Override
     public void onInit() {
         // Disable relocalization for this auto (same as artifact autos)
+        Turret.INSTANCE.updateLimelightAim(.02);
+        VisionDistanceHelper.GOAL_TAG_X_IN =  127.64;
+
+        Turret.INSTANCE.enableAutoAim(true);
         Turret.INSTANCE.limelight.pipelineSwitch(0);
         VisionDistanceHelper.RELOCALIZATION_ENABLED = false;
 
@@ -198,6 +205,9 @@ public class redCornerSpam extends NextFTCOpMode {
 
     @Override
     public void onStartButtonPressed() {
+        LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+        LauncherOuttakeFuckingThing.autoCalculate = true;
+
 
         Follower follower = PedroComponent.follower();
 
@@ -255,18 +265,19 @@ public class redCornerSpam extends NextFTCOpMode {
 
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
-                )
+                ),
 
-            //    grabfromcorner1,
-              //  new Delay(.75),
-                //Intake.INSTANCE.intakeTwoZero,
-                //scorecorner1,
-                //new Delay(.5),
-                //new LambdaCommand().setStart(() ->
-                  //      LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
-                //new LambdaCommand().setStart(() ->
-                    //    Turret.INSTANCE.snapToRememberedGoalAndEnable()
-                //),
+                grabsecond,
+                grabsecondwiggle,
+                new Delay(.75),
+                Intake.INSTANCE.intakeTwoZero,
+                scoresecond,
+                new Delay(.5),
+                new LambdaCommand().setStart(() ->
+                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
+                new LambdaCommand().setStart(() ->
+                        Turret.INSTANCE.snapToRememberedGoalAndEnable()
+                )
                 //Intake.INSTANCE.intakeTwoPowerFull
 
              //   Path5,
@@ -277,5 +288,34 @@ public class redCornerSpam extends NextFTCOpMode {
         );
 
         auto.schedule();
+    }
+    public void onUpdate() {
+
+        BindingManager.update();
+
+        Pose pedroPose = follower().getPose();
+
+        // Use local instance 'turret'
+        LLResult result = Turret.INSTANCE.limelight.getLatestResult();
+
+        double turretAngleDeg = Turret.INSTANCE.getMeasuredAngleDeg();
+
+        double distLL = VisionDistanceHelper.filteredDistanceToGoalFromLimelight(result, turretAngleDeg);
+
+        double x = pedroPose.getX();       // assumed inches in Pedro frame
+        double y = pedroPose.getY();
+        double h = pedroPose.getHeading(); // radians
+
+        telemetry.addData("LL distance to goal (in)", distLL);
+        telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
+        telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
+        telemetry.addData("turret_angle_deg", Turret.INSTANCE.getMeasuredAngleDeg());
+        telemetry.addData("turret_volts", Turret.INSTANCE.turretFeedback.getVoltage());
+        telemetry.addData("turret_state", Turret.INSTANCE.turretStateString());
+        telemetry.addData("imu", Turret.INSTANCE.getRobotHeadingDeg());
+        telemetry.addData("X", pedroPose.getX());
+        telemetry.addData("Y", pedroPose.getY());
+
+        telemetry.update();
     }
 }

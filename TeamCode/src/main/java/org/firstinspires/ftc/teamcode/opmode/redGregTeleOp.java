@@ -14,6 +14,7 @@ import org.firstinspires.ftc.teamcode.subsystem.Turret;
 import org.firstinspires.ftc.teamcode.subsystem.VisionDistanceHelper;
 
 import dev.nextftc.bindings.BindingManager;
+import dev.nextftc.core.commands.groups.SequentialGroup;
 import dev.nextftc.core.commands.utility.LambdaCommand;
 import dev.nextftc.core.components.BindingsComponent;
 import dev.nextftc.core.components.SubsystemComponent;
@@ -30,24 +31,24 @@ import com.acmerobotics.dashboard.canvas.Canvas;
 
 
 @Config
-@TeleOp(name = "Greg TeleOp")
-public class GregTeleOp extends NextFTCOpMode {
+@TeleOp(name = "red TeleOp")
+public class redGregTeleOp extends NextFTCOpMode {
     // Reverted: Define turret as an instance variable so we can create a fresh one
-    private Turret turret;
+
 
     private DriverControlledCommand driveCmd;
     public static double turretAngle = 0;
 
     private FtcDashboard dashboard;
 
-    public GregTeleOp() {
-        // Reverted: Instantiate a NEW turret for this OpMode run
-        turret = new Turret();
+    public redGregTeleOp() {
+
+        VisionDistanceHelper.GOAL_TAG_X_IN =  127.64;
 
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 // Pass the specific instance we just created
-                new SubsystemComponent(turret),
+                new SubsystemComponent(Turret.INSTANCE),
                 new SubsystemComponent(Intake.INSTANCE),
                 new SubsystemComponent(LauncherOuttakeFuckingThing.INSTANCE),
                 BindingsComponent.INSTANCE
@@ -60,16 +61,26 @@ public class GregTeleOp extends NextFTCOpMode {
         follower().update();
 
         dashboard = FtcDashboard.getInstance();
+        Turret.INSTANCE.limelight.pipelineSwitch(0);
+
 
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+
         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(0.0);
+
+
     }
 
     @Override
     public void onStartButtonPressed() {
+        Turret.INSTANCE.enableLimelightAim();
+        Turret.INSTANCE.enableAutoAim(true);
+
+
+
+        LauncherOuttakeFuckingThing.autoCalculate = true;
         follower().startTeleopDrive();
         // Use local instance 'turret' instead of static 'Turret.INSTANCE'
-        turret.enableAutoAim(true);
 
         driveCmd = new PedroDriverControlled(
                 Gamepads.gamepad1().leftStickY().negate(),
@@ -102,11 +113,44 @@ public class GregTeleOp extends NextFTCOpMode {
         Gamepads.gamepad1().rightBumper()
                 .whenBecomesTrue(
                         // Use local instance method reference
-                        new LambdaCommand().setStart(turret::snapToRememberedGoalAndEnable))
+                        new LambdaCommand().setStart(Turret.INSTANCE::snapToRememberedGoalAndEnable))
                 .whenBecomesTrue(new LambdaCommand().setStart(() -> LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)));
 
-        Gamepads.gamepad1().circle()
-                .whenBecomesTrue(new LambdaCommand().setStart(() -> turret.manual()));
+
+        Gamepads.gamepad2().triangle()
+                .whenBecomesTrue(new SequentialGroup(
+                        // Step 1: Set Shooter Fallback & Start moving Turret to 0
+
+                        new LambdaCommand()
+                                .setStart(() -> {
+                                    Turret.INSTANCE.enableAutoAim(false);
+
+                                    // Set Shooter to static fallback
+                                    LauncherOuttakeFuckingThing.INSTANCE.setManualShooter(
+                                            LauncherOuttakeFuckingThing.FALLBACK_RPM,
+                                            LauncherOuttakeFuckingThing.FALLBACK_ANGLE
+                                    );
+                                    // Command Turret to center
+                                    Turret.INSTANCE.setManualAngle(0.0);
+                                })
+                                // This command counts as "finished" only when the turret is close to 0
+                                .setIsDone(() -> Math.abs(Turret.INSTANCE.getMeasuredAngleDeg()) < 5.0),
+
+                        // Step 2: Once the turret is centered, cut the power
+                        new LambdaCommand().setStart(() -> Turret.INSTANCE.off())
+                ));
+
+        Gamepads.gamepad2().square()
+                .whenBecomesTrue(new LambdaCommand().setStart(() -> {
+                    // 1. Turn Shooter Vision Calculation back ON
+                    LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+
+                    // 2. Turn Turret Tracking back ON
+                    // This wakes it up from "OFF" and sets state to "LIMELIGHT"
+                    Turret.INSTANCE.enableAutoAim(true);
+                }));
+
+
     }
 
     @Override
@@ -116,9 +160,9 @@ public class GregTeleOp extends NextFTCOpMode {
         Pose pedroPose = follower().getPose();
 
         // Use local instance 'turret'
-        LLResult result = turret.limelight.getLatestResult();
+        LLResult result = Turret.INSTANCE.limelight.getLatestResult();
 
-        double turretAngleDeg = turret.getMeasuredAngleDeg();
+        double turretAngleDeg = Turret.INSTANCE.getMeasuredAngleDeg();
 
         double distLL = VisionDistanceHelper.distanceToGoalFromLimelight(result, turretAngleDeg);
 
@@ -145,10 +189,10 @@ public class GregTeleOp extends NextFTCOpMode {
         telemetry.addData("LL distance to goal (in)", distLL);
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
         telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
-        telemetry.addData("turret_angle_deg", turret.getMeasuredAngleDeg());
-        telemetry.addData("turret_volts", turret.turretFeedback.getVoltage());
-        telemetry.addData("turret_state", turret.turretStateString());
-        telemetry.addData("imu", turret.getRobotHeadingDeg());
+        telemetry.addData("turret_angle_deg", Turret.INSTANCE.getMeasuredAngleDeg());
+        telemetry.addData("turret_volts", Turret.INSTANCE.turretFeedback.getVoltage());
+        telemetry.addData("turret_state", Turret.INSTANCE.turretStateString());
+        telemetry.addData("imu", Turret.INSTANCE.getRobotHeadingDeg());
         telemetry.addData("X", pedroPose.getX());
         telemetry.addData("Y", pedroPose.getY());
 

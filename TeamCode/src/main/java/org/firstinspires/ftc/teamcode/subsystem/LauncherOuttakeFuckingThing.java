@@ -66,8 +66,8 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     private double lastTargetRpm = 0.0;
 
     // --- Fallback when Limelight / distance is bad ---
-    public static double FALLBACK_RPM   = 2500;
-    public static double FALLBACK_ANGLE = 25.0;
+    public static double FALLBACK_RPM   = 2700;
+    public static double FALLBACK_ANGLE = 32.0;
 
     // How long a vision solution is considered "fresh"
     public static double VISION_TIMEOUT_SEC = 0.4;
@@ -96,8 +96,9 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
         setTargetRpm(0.0);
         setAngle(shooterAngle);
 
+
         // Default to Auto Calculation on startup
-        autoCalculate = true;
+        autoCalculate = false;
         haveFreshVisionSolution = false;
         timeSinceLastVision = 999.0;
     }
@@ -124,6 +125,7 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
         servoPos = Range.clip(servoPos, 0.0, 1.0);
         angleServo.setPosition(servoPos);
     }
+
 
     public void setTurretLatch(double pos){
         turretLatch.setPosition(pos);
@@ -176,6 +178,8 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
         // Age the last vision solution
         timeSinceLastVision += LOOP_DT;
 
+
+
         if (autoCalculate) {
             // Get Limelight result from Turret (Singleton)
             LLResult result = Turret.INSTANCE.runLimelight();
@@ -221,8 +225,8 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
                 angle = lerp(angle0, angle1, t);
 
                 // Set the targets automatically
-                setTargetRpm(speed);
-                setAngle(angle);
+               setTargetRpm(speed);
+               setAngle(angle);
             } else {
                 // This loop had no valid distance
                 haveFreshVisionSolution = false;

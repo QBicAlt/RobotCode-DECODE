@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmode;
 
+import static dev.nextftc.extensions.pedro.PedroComponent.follower;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -16,6 +18,7 @@ import org.firstinspires.ftc.teamcode.subsystem.VisionDistanceHelper;
 
 import java.util.List;
 
+import dev.nextftc.bindings.BindingManager;
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.commands.delays.Delay;
 import dev.nextftc.core.commands.groups.SequentialGroup;
@@ -56,6 +59,8 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
+
+
     // 2) go grab first stack
     public static final Command grabfirst2 = new LambdaCommand()
             .setStart(() -> {
@@ -77,6 +82,25 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
+
+    public static final Command OpenGateFirst2 = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(
+                                        new BezierCurve(
+                                                new Pose(19.000, 84.000),
+                                                new Pose(37.124, 76.911),
+                                                new Pose(15.815, 74.000)
+                                        )
+                                )
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .build()
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy());
+
     // 3) score first stack
     public static final Command scorefirst3 = new LambdaCommand()
             .setStart(() -> {
@@ -85,7 +109,7 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(19.000, 84.000),
+                                                new Pose(15.815, 74.000),
                                                 new Pose(55.000, 84.000)
                                         )
                                 )
@@ -109,7 +133,7 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
                                                 new Pose(40.786, 60.264),
                                                 new Pose(21.309, 60.097),
                                                 new Pose(43.616, 58.765),
-                                                new Pose(14.150, 59.931)
+                                                new Pose(15, 69.420)
                                         )
                                 )
                                 .setConstantHeadingInterpolation(Math.toRadians(180))
@@ -120,26 +144,6 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
-    public static final Command grabsecondgate5 = new LambdaCommand()
-            .setStart(() -> {
-                Follower follower = PedroComponent.follower();
-                follower.followPath(
-                        follower.pathBuilder()
-                                .addPath(
-                                        new BezierCurve(
-                                                new Pose(19.150, 56.931),
-                                                new Pose(26.969, 54.437),
-                                                new Pose(31.464, 62.594),
-                                                new Pose(15.000, 69.420)
-                                        )
-                                )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
-                                .build(),
-                        .6,
-                        false
-                );
-            })
-            .setIsDone(() -> !PedroComponent.follower().isBusy());
 
     // 5) score second stack
     public static final Command scoresecond5 = new LambdaCommand()
@@ -213,16 +217,20 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
-
+// this auto opens the gate after the first 3 artifacts are scored. STATIC auto opens it after our second are scored
     @Override
     public void onInit() {
         // 1. DISABLE Relocalization globally
+        Turret.INSTANCE.updateLimelightAim(.02);
+        Turret.INSTANCE.enableAutoAim(true);
         VisionDistanceHelper.RELOCALIZATION_ENABLED = false;
+        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
+        VisionDistanceHelper.GOAL_TAG_X_IN =  144- 127.64;
+
+
 
         // 2. ENABLE Auto Calculation for RPM/Angle and fallback (only for this auto)
-        LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
-        Turret.INSTANCE.limelight.pipelineSwitch(1);
-
+     //   LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
 
         LLResult result = Turret.INSTANCE.runLimelight();
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
@@ -230,6 +238,9 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
 
     @Override
     public void onStartButtonPressed() {
+        LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+        LauncherOuttakeFuckingThing.autoCalculate = true;
+
         // Tell Pedro where we actually are at the start (artifact pile)
         Follower follower = PedroComponent.follower();
         follower.setPose(new Pose(17.8, 118, Math.toRadians(144)));
@@ -271,6 +282,7 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
                 // Go grab first stack
                 grabfirst2,
                 Intake.INSTANCE.intakeTwoZero,
+                OpenGateFirst2,
 
                 // Drive back to score first stack
                 scorefirst3,
@@ -298,8 +310,6 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
 
                 // Go grab second stack
                 grabsecond4,
-                grabsecondgate5,
-                new Delay(1.5),
                 Intake.INSTANCE.intakeTwoZero,
 
                 // Drive back to score second stack
@@ -328,7 +338,6 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
                 grabthird1_7,
                 Intake.INSTANCE.intakeTwoPowerFull,
                 grabthird2_8,
-                new Delay(.75),
                 Intake.INSTANCE.intakeTwoZero,
                 Intake.INSTANCE.intakeOneZero,
 
@@ -351,4 +360,34 @@ public class blueArtifactSpamClose extends NextFTCOpMode {
 
         auto.schedule();
     }
+    public void onUpdate() {
+
+        BindingManager.update();
+
+        Pose pedroPose = follower().getPose();
+
+        // Use local instance 'turret'
+        LLResult result = Turret.INSTANCE.limelight.getLatestResult();
+
+        double turretAngleDeg = Turret.INSTANCE.getMeasuredAngleDeg();
+
+        double distLL = VisionDistanceHelper.filteredDistanceToGoalFromLimelight(result, turretAngleDeg);
+
+        double x = pedroPose.getX();       // assumed inches in Pedro frame
+        double y = pedroPose.getY();
+        double h = pedroPose.getHeading(); // radians
+
+        telemetry.addData("LL distance to goal (in)", distLL);
+        telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
+        telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
+        telemetry.addData("turret_angle_deg", Turret.INSTANCE.getMeasuredAngleDeg());
+        telemetry.addData("turret_volts", Turret.INSTANCE.turretFeedback.getVoltage());
+        telemetry.addData("turret_state", Turret.INSTANCE.turretStateString());
+        telemetry.addData("imu", Turret.INSTANCE.getRobotHeadingDeg());
+        telemetry.addData("X", pedroPose.getX());
+        telemetry.addData("Y", pedroPose.getY());
+
+        telemetry.update();
+    }
+
 }
