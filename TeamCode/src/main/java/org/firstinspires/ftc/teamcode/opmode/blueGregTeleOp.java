@@ -36,13 +36,14 @@ public class blueGregTeleOp extends NextFTCOpMode {
     // Reverted: Define turret as an instance variable so we can create a fresh one
 
     private DriverControlledCommand driveCmd;
-    public static double turretAngle = 0;
 
     private FtcDashboard dashboard;
+
 
     public blueGregTeleOp() {
         // Reverted: Instantiate a NEW turret for this OpMode run
         VisionDistanceHelper.GOAL_TAG_X_IN =  144 - 127.64;
+
 
 
         addComponents(
@@ -57,16 +58,20 @@ public class blueGregTeleOp extends NextFTCOpMode {
 
     @Override
     public void onInit() {
+
         follower().setPose(new Pose(0, 0, 0));
         follower().update();
 
         dashboard = FtcDashboard.getInstance();
         Turret.INSTANCE.limelight.pipelineSwitch(1);
+        Turret.INSTANCE.LIMELIGHT_X_OFFSET_DEG =  2;
+
 
 
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
 
         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(0.0);
+
 
     }
 
@@ -149,6 +154,14 @@ public class blueGregTeleOp extends NextFTCOpMode {
 
         Gamepads.gamepad1().circle()
                 .whenBecomesTrue(new LambdaCommand().setStart(() -> Turret.INSTANCE.manual()));
+
+        Gamepads.gamepad2().rightBumper()
+                .whenBecomesTrue(Intake.INSTANCE.extendClimb1)
+                .whenBecomesTrue(Intake.INSTANCE.extendClimb2);
+
+        Gamepads.gamepad2().leftBumper()
+                .whenBecomesTrue(Intake.INSTANCE.retractClimb1)
+                .whenBecomesTrue(Intake.INSTANCE.retractClimb2);
     }
 
     @Override

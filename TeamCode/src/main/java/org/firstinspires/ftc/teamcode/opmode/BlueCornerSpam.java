@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.opmode;
 
 import static dev.nextftc.extensions.pedro.PedroComponent.follower;
 
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -20,6 +22,7 @@ import java.util.List;
 
 import dev.nextftc.bindings.BindingManager;
 import dev.nextftc.core.commands.Command;
+import dev.nextftc.core.commands.groups.ParallelGroup;
 import dev.nextftc.core.commands.groups.SequentialGroup;
 import dev.nextftc.core.commands.utility.LambdaCommand;
 import dev.nextftc.core.commands.delays.Delay;
@@ -28,16 +31,20 @@ import dev.nextftc.core.components.SubsystemComponent;
 import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.ftc.NextFTCOpMode;
 
-@Autonomous(name = "redCornerSpam")
-public class redCornerSpam extends NextFTCOpMode {
+@Autonomous(name = "blueCornerSpam")
+public class BlueCornerSpam extends NextFTCOpMode {
 
-    public redCornerSpam() {
+
+    public BlueCornerSpam() {
+
+
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(Turret.INSTANCE),
                 new SubsystemComponent(Intake.INSTANCE),
                 new SubsystemComponent(LauncherOuttakeFuckingThing.INSTANCE),
                 BindingsComponent.INSTANCE
+
         );
     }
 
@@ -54,11 +61,10 @@ public class redCornerSpam extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(48.000, 8.000).mirror(), new Pose(60.000, 25.000).mirror())
+                                        new BezierLine(new Pose(48.000, 7.000), new Pose(59.000, 22.000))
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
-                                .build(),
-                        .7, false
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .build()
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
@@ -71,12 +77,12 @@ public class redCornerSpam extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(60.000, 25.000).mirror(),
-                                                new Pose(33.628, 14.816).mirror(),
-                                                new Pose(8.000, 25.000).mirror()
+                                                new Pose(59.000, 22.000),
+                                                new Pose(34.627, 13.151),
+                                                new Pose(11.000, 15.000)
                                         )
                                 )
-                                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(270))
+                                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
                                 .build()
                 );
             })
@@ -88,14 +94,48 @@ public class redCornerSpam extends NextFTCOpMode {
                 Follower follower = PedroComponent.follower();
                 follower.followPath(
                         follower.pathBuilder()
-                                .addPath(new BezierLine(new Pose(8.000, 25.000).mirror(), new Pose(8.000, 10.000).mirror()))
-                                .setLinearHeadingInterpolation(Math.toRadians(270), Math.toRadians(270))
+                                .addPath(   new BezierCurve(
+                                                new Pose(11.000, 15.000),
+                                                new Pose(35.126, 11.320),
+                                                new Pose(11.000, 8.000)
+                                        )
+                                )
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
                                 .build(),
-                .3, false
+                        1, false
 
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
+
+ /*   public static final Command grabfirst_3 = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(new BezierLine(new Pose(9.000, 25.000),
+                                        new Pose(9.000, 14.000)))
+                                .setLinearHeadingInterpolation(Math.toRadians(240), Math.toRadians(240))
+                                .build(),
+                        1, false
+
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy());
+    public static final Command grabfirst_4 = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(new BezierLine(new Pose(9.000, 14.000),
+                                                new Pose(9.000, 10.000)))
+                                .setLinearHeadingInterpolation(Math.toRadians(240), Math.toRadians(270))
+                                .build(),
+                        1, false
+
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy()); */
 
     // 3) grab from corner #1 again
     public static final Command scoreFirst = new LambdaCommand()
@@ -104,10 +144,10 @@ public class redCornerSpam extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(8.000, 10.000).mirror(),
-                                                new Pose(60.000, 25.000).mirror())
+                                        new BezierLine(new Pose(9.000, 10.000),
+                                                new Pose(59.000, 22.000))
                                 )
-                                .setLinearHeadingInterpolation(Math.toRadians(270), Math.toRadians(0))
+                                .setLinearHeadingInterpolation(Math.toRadians(270), Math.toRadians(180))
                                 .build()
                 );
             })
@@ -120,10 +160,10 @@ public class redCornerSpam extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(60.000, 25.000).mirror(),
-                                                new Pose(10.000, 15.000).mirror())
+                                        new BezierLine(new Pose(59.000, 22.000),
+                                                new Pose(10.000, 15.000))
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
                                 .build()
                 );
             })
@@ -137,32 +177,34 @@ public class redCornerSpam extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(10.000, 15.000).mirror(),
-                                                new Pose(25.138, 19.477).mirror(),
-                                                new Pose(9.822, 25.803).mirror()
-                                                ))
+                                                new Pose(10.000, 15.000),
+                                                new Pose(25.138, 19.477),
+                                                new Pose(9.822, 15.803)
+                                        ))
 
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
                                 .build()
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
     // 6) grab from second corner
-    public static final Command scoresecond= new LambdaCommand()
+    public static final Command scoresecond = new LambdaCommand()
             .setStart(() -> {
                 Follower follower = PedroComponent.follower();
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(9.822, 25.803).mirror(),
-                                                new Pose(60.000, 25.000).mirror())
+                                        new BezierLine(new Pose(9.822, 25.803),
+                                                new Pose(59.000, 22.000))
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
                                 .build()
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
+
+
 
     // 7) final score from second corner
     public static final Command grabthird = new LambdaCommand()
@@ -171,34 +213,83 @@ public class redCornerSpam extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(60.000, 25.000).mirror(),
-                                                new Pose(10.000, 10.000).mirror())
+                                        new BezierLine(new Pose(59.000, 22.000),
+                                                new Pose(10.000, 30.000))
 
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .build()
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy());
+
+    public static final Command grabthirdwiggle = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(
+                                        new BezierCurve(
+                                                new Pose(10.000, 30.000),
+                                                new Pose(25.138, 19.477),
+                                                new Pose(9.822, 15.803)
+                                        ))
+
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .build()
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy());
+
+    public static final Command scorethird = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(
+                                        new BezierLine(new Pose(9.822, 15.803),
+                                                new Pose(59.000, 22.000))
+                                )
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .build()
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy());
+
+    public static final Command move = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(
+                                        new BezierLine(new Pose(59, 22),
+                                                new Pose(30.000, 22.000))
+                                )
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
                                 .build()
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
 
+
+
     @Override
     public void onInit() {
         // Disable relocalization for this auto (same as artifact autos)
-        Turret.INSTANCE.updateLimelightAim(.02);
-        VisionDistanceHelper.GOAL_TAG_X_IN =  127.64;
-
-        Turret.INSTANCE.enableAutoAim(true);
-        Turret.INSTANCE.limelight.pipelineSwitch(0);
+        Turret.INSTANCE.limelight.pipelineSwitch(1);
         VisionDistanceHelper.RELOCALIZATION_ENABLED = false;
 
         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
+        Turret.INSTANCE.updateLimelightAim(.02);
+        Turret.INSTANCE.enableAutoAim(true);
+        Turret.INSTANCE.LIMELIGHT_X_OFFSET_DEG = 2;
+
+        VisionDistanceHelper.GOAL_TAG_X_IN =  144 - 127.64;
 
 
-        Turret.INSTANCE.LIMELIGHT_X_OFFSET_DEG = -3;
 
-
-                // Kick the Limelight once (matches your other autos)
+        // Kick the Limelight once (matches your other autos)
         LLResult result = Turret.INSTANCE.runLimelight();
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
     }
@@ -209,10 +300,13 @@ public class redCornerSpam extends NextFTCOpMode {
         LauncherOuttakeFuckingThing.autoCalculate = true;
 
 
+        LLResult result = Turret.INSTANCE.runLimelight();
+        List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
+
         Follower follower = PedroComponent.follower();
 
         // Start pose for this corner auto: first path's start pose + heading 180
-        follower.setPose(new Pose(48.0, 7.0, Math.toRadians(180)).mirror());
+        follower.setPose(new Pose(48.0, 7.0, Math.toRadians(180)));
 
 
         // Skeleton auto sequence.
@@ -223,10 +317,11 @@ public class redCornerSpam extends NextFTCOpMode {
 
                 // Example: preload setup if you want it; copy your artifact spam here
                 new LambdaCommand().setStart(() -> {
+                    LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+                    Turret.INSTANCE.enableAutoAim(true);
                     // Example shooter/intake prep – customize as needed
                     LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
-                    LauncherOuttakeFuckingThing.INSTANCE.setFallback(3600, 41.5);
-                    LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+                //    LauncherOuttakeFuckingThing.INSTANCE.setFallback(3600, 41.5);
                     Turret.INSTANCE.enableAutoAim(true);
                 }),
                 Intake.INSTANCE.intakeOneZero,
@@ -234,26 +329,26 @@ public class redCornerSpam extends NextFTCOpMode {
                 movefirst,
 
 
-        new Delay(1.5),
                 Intake.INSTANCE.intakeOnePowerFull,
                 Intake.INSTANCE.intakeTwoPowerFull,
 
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
                 ),
-                new Delay(1.5),
+                new Delay(2),
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
                 grabfirst_1,
                 grabfirst_2,
+
                 new Delay(.2),
                 Intake.INSTANCE.intakeTwoZero,
                 scoreFirst,
 
 
                 new LambdaCommand().setStart(() ->
-                     LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
+                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
@@ -261,7 +356,7 @@ public class redCornerSpam extends NextFTCOpMode {
 
                 Intake.INSTANCE.intakeTwoPowerFull,
 
-                new Delay(1.5),
+                new Delay(2),
 
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
@@ -271,26 +366,61 @@ public class redCornerSpam extends NextFTCOpMode {
                 grabsecondwiggle,
                 new Delay(.75),
                 Intake.INSTANCE.intakeTwoZero,
+
+                new LambdaCommand()
+                        .setStart(() -> {
+                            Turret.INSTANCE.enableAutoAim(false);
+                            Turret.INSTANCE.setManualAngle(-60);
+                        }),
+
                 scoresecond,
-                new Delay(.5),
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
-                )
-                //Intake.INSTANCE.intakeTwoPowerFull
+                ),
+                new Delay(.5),
+                Intake.INSTANCE.intakeTwoPowerFull,
 
-             //   Path5,
-               // grabcorener2,
+                new LambdaCommand().setStart(() ->
+                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
+                new Delay(2),
+
+                new LambdaCommand().setStart(() ->
+                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
+                ),
+                grabthird,
+                grabthirdwiggle,
+                Intake.INSTANCE.intakeTwoZero,
+                scorethird,
+
+                new LambdaCommand().setStart(() ->
+                        Turret.INSTANCE.snapToRememberedGoalAndEnable()
+                ),
+                new Delay(.5),
+                Intake.INSTANCE.intakeTwoPowerFull,
+
+                new LambdaCommand().setStart(() ->
+                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
+                new Delay(2),
+                move
+
+
+
+
+        //Intake.INSTANCE.intakeTwoPowerFull
+
+                //   Path5,
+                // grabcorener2,
                 //scorecorner3,
 
 
         );
 
+
         auto.schedule();
     }
-    public void onUpdate() {
 
+    @Override
+    public void onUpdate () {
         BindingManager.update();
 
         Pose pedroPose = follower().getPose();
@@ -300,11 +430,27 @@ public class redCornerSpam extends NextFTCOpMode {
 
         double turretAngleDeg = Turret.INSTANCE.getMeasuredAngleDeg();
 
-        double distLL = VisionDistanceHelper.filteredDistanceToGoalFromLimelight(result, turretAngleDeg);
+        double distLL = VisionDistanceHelper.distanceToGoalFromLimelight(result, turretAngleDeg);
+
+
+        // --- DASHBOARD FIELD MAP DRAWING ---
+        TelemetryPacket packet = new TelemetryPacket();
+        Canvas field = packet.fieldOverlay();
 
         double x = pedroPose.getX();       // assumed inches in Pedro frame
         double y = pedroPose.getY();
         double h = pedroPose.getHeading(); // radians
+
+        double robotRadius = 9.0; // ~9in radius for visualization
+
+        // Draw a circle for the robot
+        field.strokeCircle(x, y, robotRadius);
+
+        // Draw a heading line
+        double lineLen = robotRadius * 1.2;
+        double hx = x + lineLen * Math.cos(h);
+        double hy = y + lineLen * Math.sin(h);
+        field.strokeLine(x, y, hx, hy);
 
         telemetry.addData("LL distance to goal (in)", distLL);
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
@@ -317,5 +463,7 @@ public class redCornerSpam extends NextFTCOpMode {
         telemetry.addData("Y", pedroPose.getY());
 
         telemetry.update();
+
     }
 }
+

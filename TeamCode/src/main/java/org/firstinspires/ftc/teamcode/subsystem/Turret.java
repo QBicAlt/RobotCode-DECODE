@@ -84,15 +84,15 @@ public class Turret implements Subsystem {
     public static double MAX_TURRET_POWER = 1.0;
     public static double MAX_ANGLE_INTEGRAL = 50.0;
 
-    public static double HOLD_TOL_DEG = .5;   // inner loop "close enough"
-    public static double SNAP_TOL_DEG = 3.0;   // when snapping to remembered angle
+    public static double HOLD_TOL_DEG = 0;   // inner loop "close enough"
+    public static double SNAP_TOL_DEG = .5;   // when snapping to remembered angle
 
     private double turretSetpointDeg = 0.0;
     private double angleIntegral = 0.0;
     private double lastAngleError = 0.0;
 
     // --- Limelight PID around tx (pure LL control in LIMELIGHT state) ---
-    public static double kLL_P = -0.0078;   // sign based on turret direction
+    public static double kLL_P = -0.0098;   // sign based on turret direction
     public static double kLL_I = 0.0;
     public static double kLL_D = -0.00045;
 
@@ -102,7 +102,7 @@ public class Turret implements Subsystem {
     private double llLastError = 0.0;
     private double limelightPower = 0.0;
 
-    private static final double DT_SEC = 0.02; // 20 ms loop
+    private static final double DT_SEC = 0.01; // 20 ms loop
 
     // --- Angle filtering (simple EMA) ---
     public static double FILTER_ALPHA = 0.6;  // 0..1, higher = smoother
@@ -113,7 +113,7 @@ public class Turret implements Subsystem {
     // --- Limelight filtering / alignment ---
     public static double TX_FILTER_ALPHA = 0.6;
     public static double LIMELIGHT_X_OFFSET_DEG = 3;
-    public static double DEADZONE_DEG = 1.0;
+    public static double DEADZONE_DEG = .5;
 
     public static double filteredTx = 0.0;
 
@@ -147,6 +147,10 @@ public class Turret implements Subsystem {
         turretTwo.setDirection(CRServo.Direction.REVERSE);
 
         turretFeedback = ActiveOpMode.hardwareMap().get(AnalogInput.class, "turret");
+
+
+
+
 
         imu = new IMUEx("imu", Direction.RIGHT, Direction.FORWARD);
         limelight = ActiveOpMode.hardwareMap().get(Limelight3A.class, "limelight");
@@ -201,6 +205,10 @@ public class Turret implements Subsystem {
 
     // Raw analog angle (turret degrees, clipped)
     public double getMeasuredAngleDeg() {
+
+        if (turretFeedback == null) {
+            return 0.0;
+        }
         double v = turretFeedback.getVoltage();
 
         double minV = Math.min(MIN_VOLTAGE, MAX_VOLTAGE);

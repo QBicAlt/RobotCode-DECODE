@@ -28,10 +28,10 @@ import dev.nextftc.core.components.SubsystemComponent;
 import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.ftc.NextFTCOpMode;
 
-@Autonomous(name = "blueArtifactSpamSTATIC")
-public class blueArtifactSpamSTATIC extends NextFTCOpMode {
+@Autonomous(name = "redArtifactSpamSTATIC")
+public class RedArtifactSpamSTATIC extends NextFTCOpMode {
 
-    public blueArtifactSpamSTATIC() {
+    public RedArtifactSpamSTATIC() {
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(Turret.INSTANCE),
@@ -48,8 +48,8 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(17.8, 118),
-                                                new Pose(48.000, 96.000)
+                                                new Pose(17.8, 118).mirror(),
+                                                new Pose(48.000, 96.000).mirror()
                                         )
                                 )
                                 .setTangentHeadingInterpolation()
@@ -67,12 +67,12 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(48.000, 96.000),
-                                                new Pose(69.753, 81.739),
-                                                new Pose(19.000, 84.000)
+                                                new Pose(48.000, 96.000).mirror(),
+                                                new Pose(69.753, 81.739).mirror(),
+                                                new Pose(15.000, 84.000).mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build(),
                         .6,
                         false
@@ -88,11 +88,11 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(19.000, 84.000),
-                                                new Pose(55.000, 84.000)
+                                                new Pose(15.000, 84.000).mirror(),
+                                                new Pose(55.000, 84.000).mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 // .setReversed()
                                 .build()
                 );
@@ -107,15 +107,15 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(55.000, 84.000),
-                                                new Pose(59.598, 52.772),
-                                                new Pose(40.786, 60.264),
-                                                new Pose(21.309, 60.097),
-                                                new Pose(43.616, 58.765),
-                                                new Pose(14.150, 59.931)
+                                                new Pose(55.000, 84.000).mirror(),
+                                                new Pose(59.598, 52.772).mirror(),
+                                                new Pose(40.786, 60.264).mirror(),
+                                                new Pose(21.309, 60.097).mirror(),
+                                                new Pose(43.616, 58.765).mirror(),
+                                                new Pose(14.150, 59.931).mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build(),
                         .6,
                         false
@@ -130,13 +130,13 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(19.150, 56.931),
-                                                new Pose(26.969, 54.437),
-                                                new Pose(31.464, 62.594),
-                                                new Pose(15.000, 69.420)
+                                                new Pose(19.150, 56.931).mirror(),
+                                                new Pose(26.969, 54.437).mirror(),
+                                                new Pose(31.464, 62.594).mirror(),
+                                                new Pose(15.000, 69.420).mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build(),
                         .6,
                         false
@@ -152,11 +152,11 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(15.000, 69.420),
-                                                new Pose(55.000, 84.000)
+                                                new Pose(15.000, 69.420).mirror(),
+                                                new Pose(55.000, 84.000).mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 // .setReversed()
                                 .build()
                 );
@@ -171,9 +171,9 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(55.000, 84.000),
-                                                new Pose(63.760, 36.791),
-                                                new Pose(44.615, 35.292)
+                                                new Pose(55.000, 84.000).mirror(),
+                                                new Pose(63.760, 36.791).mirror(),
+                                                new Pose(44.615, 35.292).mirror()
                                         )
                                 )
                                 .setTangentHeadingInterpolation()
@@ -189,13 +189,13 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(44.615, 35.292),
-                                                new Pose(11.487, 35.292))
+                                        new BezierLine(new Pose(44.615, 35.292).mirror(),
+                                                new Pose(11.487, 35.292).mirror())
                                 )
                                 .setTangentHeadingInterpolation()
 
                                 .build(),
-                .6, false);
+                        .6, false);
 
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
@@ -206,11 +206,11 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(11.487, 35.292),
-                                                new Pose(55.000, 84.000))
+                                        new BezierLine(new Pose(11.487, 35.292).mirror(),
+                                                new Pose(55.000, 84.000).mirror())
 
                                 )
-                                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
+                                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                                 .build()
                 );
             })
@@ -219,22 +219,20 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
 
     @Override
     public void onInit() {
+        //Turret.INSTANCE.updateLimelightAim(.02);
+        Turret.INSTANCE.enableAutoAim(true);
         // 1. DISABLE Relocalization globally
         VisionDistanceHelper.RELOCALIZATION_ENABLED = false;
-        Turret.INSTANCE.updateLimelightAim(.02);
-        Turret.INSTANCE.enableAutoAim(true);
-        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
-
-        VisionDistanceHelper.GOAL_TAG_X_IN =  144- 127.64;
-
+        VisionDistanceHelper.GOAL_TAG_X_IN =  127.64;
 
 
         // 2. ENABLE Auto Calculation for RPM/Angle and fallback (only for this auto)
-      //  LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+       // LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
+        Turret.INSTANCE.limelight.pipelineSwitch(0);
+        Turret.INSTANCE.LIMELIGHT_X_OFFSET_DEG = -3;
+        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
 
         LLResult result = Turret.INSTANCE.runLimelight();
-        Turret.INSTANCE.limelight.pipelineSwitch(1);
-
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
     }
 
@@ -245,7 +243,7 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
 
         // Tell Pedro where we actually are at the start (artifact pile)
         Follower follower = PedroComponent.follower();
-        follower.setPose(new Pose(17.8, 118, Math.toRadians(144)));
+        follower.setPose(new Pose(17.8, 118, Math.toRadians(144)).mirror());
 
         Command auto = new SequentialGroup(
                 Intake.INSTANCE.intakeOneZero,
@@ -257,13 +255,12 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 ),
                 // For the first scoring position: if vision is dead, use 2500 / 25
                 new LambdaCommand().setStart(() -> {
-                  //  LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27);
+                    LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27);
                     LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
                 }),
                 new LambdaCommand().setStart(() -> Turret.INSTANCE.enableAutoAim(true)),
 
                 Intake.INSTANCE.intakeOnePowerFull,
-                Intake.INSTANCE.intakeTwoZero,
 
                 // Drive out to score first artifact
                 scoreFirst1,
@@ -291,7 +288,8 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 scorefirst3,
 
                 // For this shot, use a tuned fallback if vision is missing
-
+                new LambdaCommand().setStart(() -> LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
+                ),
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
@@ -318,7 +316,10 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 // Drive back to score second stack
                 scoresecond5,
 
-
+                // Second stack shot fallback
+                    new LambdaCommand().setStart(() ->
+                            LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
+                ),
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
@@ -345,7 +346,9 @@ public class blueArtifactSpamSTATIC extends NextFTCOpMode {
                 scorethird,
 
                 // Third shot fallback
-
+                new LambdaCommand().setStart(() ->
+                        LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
+                ),
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),

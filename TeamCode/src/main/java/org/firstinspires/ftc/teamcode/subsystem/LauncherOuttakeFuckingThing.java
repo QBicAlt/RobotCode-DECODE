@@ -186,7 +186,7 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
             double turretAngle = Turret.INSTANCE.getMeasuredAngleDeg();
 
             // Use the FILTERED Limelight distance (No Odometry)
-            double distIn = VisionDistanceHelper.filteredDistanceToGoalFromLimelight(result, turretAngle);
+            double distIn = VisionDistanceHelper.distanceToGoalFromLimelight(result, turretAngle);
 
             // Only update if we have a valid distance
             if (!Double.isNaN(distIn) && distIn > 0) {

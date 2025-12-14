@@ -11,7 +11,7 @@ import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.commands.utility.LambdaCommand;
 import dev.nextftc.extensions.pedro.PedroComponent;
 
-public class Paths {
+public class SortedAutoPaths {
 
     public static final double FIRST_SCORING_HEADING_BLUE = Math.toRadians(135);
     public static final Pose FIRST_SCORING_POSE_BLUE =

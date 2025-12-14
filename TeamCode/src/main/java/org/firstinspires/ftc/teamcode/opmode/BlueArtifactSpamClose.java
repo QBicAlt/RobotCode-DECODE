@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.opmode;
 
 import static dev.nextftc.extensions.pedro.PedroComponent.follower;
 
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -21,6 +23,7 @@ import java.util.List;
 import dev.nextftc.bindings.BindingManager;
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.commands.delays.Delay;
+import dev.nextftc.core.commands.groups.ParallelGroup;
 import dev.nextftc.core.commands.groups.SequentialGroup;
 import dev.nextftc.core.commands.utility.LambdaCommand;
 import dev.nextftc.core.components.BindingsComponent;
@@ -28,10 +31,10 @@ import dev.nextftc.core.components.SubsystemComponent;
 import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.ftc.NextFTCOpMode;
 
-@Autonomous(name = "redArtifactSpamSTATIC")
-public class redArtifactSpamSTATIC extends NextFTCOpMode {
+@Autonomous(name = "blueArtifactSpamClose")
+public class BlueArtifactSpamClose extends NextFTCOpMode {
 
-    public redArtifactSpamSTATIC() {
+    public BlueArtifactSpamClose() {
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(Turret.INSTANCE),
@@ -48,8 +51,8 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(17.8, 118).mirror(),
-                                                new Pose(48.000, 96.000).mirror()
+                                                new Pose(17.8, 118),
+                                                new Pose(48.000, 96.000)
                                         )
                                 )
                                 .setTangentHeadingInterpolation()
@@ -67,15 +70,34 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(48.000, 96.000).mirror(),
-                                                new Pose(69.753, 81.739).mirror(),
-                                                new Pose(15.000, 84.000).mirror()
+                                                new Pose(48.000, 96.000),
+                                                new Pose(69.753, 81.739),
+                                                new Pose(19.000, 84.000)
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
                                 .build(),
-                        .6,
+                        .8,
                         false
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy());
+
+
+    public static final Command OpenGateFirst2 = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(
+                                        new BezierCurve(
+                                                new Pose(19.000, 84.000),
+                                                new Pose(37.124, 76.911),
+                                                new Pose(17.815, 71.000)
+                                        )
+                                )
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .build()
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
@@ -88,18 +110,17 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(15.000, 84.000).mirror(),
-                                                new Pose(55.000, 84.000).mirror()
+                                                new Pose(17.815, 71.000),
+                                                new Pose(55.000, 84.000)
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
                                 // .setReversed()
                                 .build()
                 );
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
 
-    // 4) grab second stack
     public static final Command grabsecond4 = new LambdaCommand()
             .setStart(() -> {
                 Follower follower = PedroComponent.follower();
@@ -107,38 +128,17 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(55.000, 84.000).mirror(),
-                                                new Pose(59.598, 52.772).mirror(),
-                                                new Pose(40.786, 60.264).mirror(),
-                                                new Pose(21.309, 60.097).mirror(),
-                                                new Pose(43.616, 58.765).mirror(),
-                                                new Pose(14.150, 59.931).mirror()
+                                                new Pose(55.000, 84.000),
+                                                new Pose(59.598, 52.772),
+                                                new Pose(40.786, 60.264),
+                                                new Pose(21.309, 60.097),
+                                                new Pose(43.616, 58.765),
+                                                new Pose(15, 55)
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
                                 .build(),
-                        .6,
-                        false
-                );
-            })
-            .setIsDone(() -> !PedroComponent.follower().isBusy());
-
-    public static final Command grabsecondgate5 = new LambdaCommand()
-            .setStart(() -> {
-                Follower follower = PedroComponent.follower();
-                follower.followPath(
-                        follower.pathBuilder()
-                                .addPath(
-                                        new BezierCurve(
-                                                new Pose(19.150, 56.931).mirror(),
-                                                new Pose(26.969, 54.437).mirror(),
-                                                new Pose(31.464, 62.594).mirror(),
-                                                new Pose(15.000, 69.420).mirror()
-                                        )
-                                )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
-                                .build(),
-                        .6,
+                        .8,
                         false
                 );
             })
@@ -152,11 +152,11 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                new Pose(15.000, 69.420).mirror(),
-                                                new Pose(55.000, 84.000).mirror()
+                                                new Pose(15.000, 55),
+                                                new Pose(55.000, 84.000)
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(0))
+                                .setConstantHeadingInterpolation(Math.toRadians(180))
                                 // .setReversed()
                                 .build()
                 );
@@ -171,9 +171,9 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(55.000, 84.000).mirror(),
-                                                new Pose(63.760, 36.791).mirror(),
-                                                new Pose(44.615, 35.292).mirror()
+                                                new Pose(55.000, 84.000),
+                                                new Pose(63.760, 36.791),
+                                                new Pose(44.615, 35.292)
                                         )
                                 )
                                 .setTangentHeadingInterpolation()
@@ -189,13 +189,13 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(44.615, 35.292).mirror(),
-                                                new Pose(11.487, 35.292).mirror())
+                                        new BezierLine(new Pose(44.615, 35.292),
+                                                new Pose(15.487, 35.292))
                                 )
                                 .setTangentHeadingInterpolation()
 
                                 .build(),
-                        .6, false);
+                        .8, false);
 
             })
             .setIsDone(() -> !PedroComponent.follower().isBusy());
@@ -206,11 +206,27 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(11.487, 35.292).mirror(),
-                                                new Pose(55.000, 84.000).mirror())
+                                        new BezierLine(new Pose(11.487, 35.292),
+                                                new Pose(55.000, 84.000))
 
                                 )
-                                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
+                                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(120))
+                                .build()
+                );
+            })
+            .setIsDone(() -> !PedroComponent.follower().isBusy());
+
+    public static final Command move = new LambdaCommand()
+            .setStart(() -> {
+                Follower follower = PedroComponent.follower();
+                follower.followPath(
+                        follower.pathBuilder()
+                                .addPath(
+                                        new BezierLine(new Pose(55, 84),
+                                                new Pose(55.000, 40.000))
+
+                                )
+                                .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(0))
                                 .build()
                 );
             })
@@ -219,18 +235,20 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
 
     @Override
     public void onInit() {
-        //Turret.INSTANCE.updateLimelightAim(.02);
-        Turret.INSTANCE.enableAutoAim(true);
         // 1. DISABLE Relocalization globally
+        // Turret.INSTANCE.updateLimelightAim(.02);
+        Turret.INSTANCE.enableAutoAim(true);
+        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
+
         VisionDistanceHelper.RELOCALIZATION_ENABLED = false;
-        VisionDistanceHelper.GOAL_TAG_X_IN =  127.64;
+        VisionDistanceHelper.GOAL_TAG_X_IN =  144 - 127.64;
 
 
         // 2. ENABLE Auto Calculation for RPM/Angle and fallback (only for this auto)
-       // LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
-        Turret.INSTANCE.limelight.pipelineSwitch(0);
-        Turret.INSTANCE.LIMELIGHT_X_OFFSET_DEG = -3;
-        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
+        Turret.INSTANCE.limelight.pipelineSwitch(1);
+        Turret.INSTANCE.LIMELIGHT_X_OFFSET_DEG = 0;
+
+
 
         LLResult result = Turret.INSTANCE.runLimelight();
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
@@ -243,38 +261,51 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
 
         // Tell Pedro where we actually are at the start (artifact pile)
         Follower follower = PedroComponent.follower();
-        follower.setPose(new Pose(17.8, 118, Math.toRadians(144)).mirror());
+        follower.setPose(new Pose(17.8, 118, Math.toRadians(144)));
 
         Command auto = new SequentialGroup(
+                Intake.INSTANCE.indexerOut,
+                Intake.INSTANCE.indexerIn,
+
                 Intake.INSTANCE.intakeOneZero,
                 Intake.INSTANCE.intakeTwoZero,
                 // Spin up + clamp for first shot
-                Intake.INSTANCE.indexerIn,
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
                 // For the first scoring position: if vision is dead, use 2500 / 25
                 new LambdaCommand().setStart(() -> {
-                    LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27);
+                    LauncherOuttakeFuckingThing.INSTANCE.setFallback(2400, 27);
                     LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
                 }),
                 new LambdaCommand().setStart(() -> Turret.INSTANCE.enableAutoAim(true)),
+                new Delay(.5),
+                Intake.INSTANCE.indexerIn,
+
 
                 Intake.INSTANCE.intakeOnePowerFull,
+                Intake.INSTANCE.intakeTwoZero,
 
                 // Drive out to score first artifact
                 scoreFirst1,
 
-                // Make sure we're still in auto-calc mode as we approach
+                new Delay(.5),
+                Intake.INSTANCE.indexerIn,
+
+
+
+
+                // Make sure we're stl in auto-calc mode as we approach
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation()
                 ),
+
                 Intake.INSTANCE.intakeTwoPowerFull,
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
                 ),
 
-                new Delay(1.5),
+                new Delay(2),
 
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
@@ -282,25 +313,28 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
 
                 // Go grab first stack
                 grabfirst2,
+                OpenGateFirst2,
+                new Delay(.25),
                 Intake.INSTANCE.intakeTwoZero,
 
                 // Drive back to score first stack
                 scorefirst3,
+                Intake.INSTANCE.indexerIn,
+
 
                 // For this shot, use a tuned fallback if vision is missing
-                new LambdaCommand().setStart(() -> LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
-                ),
+
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
 
-                new Delay(.75),
+                new Delay(1),
 
                 Intake.INSTANCE.intakeTwoPowerFull,
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
                 ),
-                new Delay(1.5),
+                new Delay(2),
                 Intake.INSTANCE.intakeTwoZero,
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
@@ -309,27 +343,25 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
 
                 // Go grab second stack
                 grabsecond4,
-                grabsecondgate5,
-                new Delay(1.5),
                 Intake.INSTANCE.intakeTwoZero,
 
                 // Drive back to score second stack
                 scoresecond5,
+                Intake.INSTANCE.indexerIn,
+
 
                 // Second stack shot fallback
-                    new LambdaCommand().setStart(() ->
-                            LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
-                ),
+
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
                 ),
 
-                new Delay(.75),
+                new Delay(1),
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
                 ),
                 Intake.INSTANCE.intakeTwoPowerFull,
-                new Delay(1.5),
+                new Delay(2),
                 Intake.INSTANCE.intakeTwoZero,
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
@@ -339,15 +371,25 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                 grabthird1_7,
                 Intake.INSTANCE.intakeTwoPowerFull,
                 grabthird2_8,
-                new Delay(.75),
                 Intake.INSTANCE.intakeTwoZero,
                 Intake.INSTANCE.intakeOneZero,
 
-                scorethird,
+                new ParallelGroup(
+                        new LambdaCommand()
+                                .setStart(() -> {
+                                    Turret.INSTANCE.enableAutoAim(false);
+                                    Turret.INSTANCE.setManualAngle(15);
+                                })
+                                .setIsDone(() -> Math.abs(Turret.INSTANCE.getMeasuredAngleDeg()) < 5.0),
+                        scorethird
+                ),
+
+                Intake.INSTANCE.indexerIn,
+
 
                 // Third shot fallback
                 new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setFallback(2600, 27)
+                        LauncherOuttakeFuckingThing.INSTANCE.setFallback(2400, 27)
                 ),
                 new LambdaCommand().setStart(() ->
                         Turret.INSTANCE.snapToRememberedGoalAndEnable()
@@ -357,11 +399,15 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
                 ),
                 Intake.INSTANCE.intakeOnePowerFull,
-                Intake.INSTANCE.intakeTwoPowerFull
+                Intake.INSTANCE.intakeTwoPowerFull,
+                new Delay(2),
+                move
+
         );
 
         auto.schedule();
     }
+
     public void onUpdate() {
 
         BindingManager.update();
@@ -391,4 +437,5 @@ public class redArtifactSpamSTATIC extends NextFTCOpMode {
 
         telemetry.update();
     }
+
 }

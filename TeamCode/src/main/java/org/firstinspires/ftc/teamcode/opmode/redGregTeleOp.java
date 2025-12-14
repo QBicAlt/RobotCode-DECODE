@@ -62,9 +62,13 @@ public class redGregTeleOp extends NextFTCOpMode {
 
         dashboard = FtcDashboard.getInstance();
         Turret.INSTANCE.limelight.pipelineSwitch(0);
+        Turret.INSTANCE.LIMELIGHT_X_OFFSET_DEG = -2;
+
 
 
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+        Turret.INSTANCE.limelight.pipelineSwitch(0);
+
 
         LauncherOuttakeFuckingThing.INSTANCE.setTargetRpm(0.0);
 
@@ -150,8 +154,16 @@ public class redGregTeleOp extends NextFTCOpMode {
                     Turret.INSTANCE.enableAutoAim(true);
                 }));
 
+        Gamepads.gamepad2().rightBumper()
+                .whenBecomesTrue(Intake.INSTANCE.extendClimb1)
+                .whenBecomesTrue(Intake.INSTANCE.extendClimb2);
 
+        Gamepads.gamepad2().leftBumper()
+                .whenBecomesTrue(Intake.INSTANCE.retractClimb1)
+                .whenBecomesTrue(Intake.INSTANCE.retractClimb2);
     }
+
+
 
     @Override
     public void onUpdate () {
@@ -190,7 +202,7 @@ public class redGregTeleOp extends NextFTCOpMode {
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
         telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());
         telemetry.addData("turret_angle_deg", Turret.INSTANCE.getMeasuredAngleDeg());
-        telemetry.addData("turret_volts", Turret.INSTANCE.turretFeedback.getVoltage());
+     //   telemetry.addData("turret_volts", Turret.INSTANCE.turretFeedback.getVoltage());
         telemetry.addData("turret_state", Turret.INSTANCE.turretStateString());
         telemetry.addData("imu", Turret.INSTANCE.getRobotHeadingDeg());
         telemetry.addData("X", pedroPose.getX());
