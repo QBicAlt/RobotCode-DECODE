@@ -67,7 +67,7 @@ public class SortedAutoRed extends NextFTCOpMode {
 
     @Override
     public void onInit() {
-        Turret.INSTANCE.manual();
+       // Turret.INSTANCE.manual();
         Turret.INSTANCE.setManualAngle(90);
     }
 
@@ -79,10 +79,11 @@ public class SortedAutoRed extends NextFTCOpMode {
      */
     @Override
     public void onStartButtonPressed() {
-        LLResult result = Turret.INSTANCE.runLimelight();
-        List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
-        for (LLResultTypes.FiducialResult tag : tags) {
-            int tagID = tag.getFiducialId();
+   //     LLResult result = Turret.INSTANCE.runLimelight();
+      //  List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
+    //
+        //    for (LLResultTypes.FiducialResult tag : tags) {
+            /*int tagID = tag.getFiducialId();
             if (tagID == 21) { // GPP
                 swapStep = 1;
             } else if (tagID == 22) { // PGP
@@ -90,9 +91,9 @@ public class SortedAutoRed extends NextFTCOpMode {
             } else if (tagID == 23) { // PPG
                 swapStep = 2;
             }
-        }
+        } */
 
-        Turret.INSTANCE.snapToRememberedGoalAndEnable();
+     //   Turret.INSTANCE.snapToRememberedGoalAndEnable();
 
         new SequentialGroup(
                 // path to 1
