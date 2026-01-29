@@ -16,27 +16,26 @@ public class LimelightPointDrive extends Command {
 
     // --- CAMERA GEOMETRY ---
     private final double CAMERA_HEIGHT = 9.7;
-    private final double MOUNT_ANGLE = 15.0;
+    private final double MOUNT_ANGLE = 0.0;
 
     // --- CONFIGURATION ---
-    // These are the "Blue" values.
     private final double FIXED_X_BLUE = 10.0;
     private final double STANDOFF_X_BLUE = 38.0;
+    private final double HEADING_BLUE = Math.toRadians(180);
+    private final double HEADING_RED = Math.toRadians(0);
 
-    // Headings
-    private final double HEADING_BLUE = Math.toRadians(180); // Facing Blue Wall (Left)
-    private final double HEADING_RED = Math.toRadians(0);    // Facing Red Wall (Right)
-
-    // Y Constraints (SHARED for both sides in this version)
     private final double MIN_Y = 7.0;
     private final double MAX_Y = 58.0;
     private final double FALLBACK_Y = 9.0;
-
     private final double FIELD_WIDTH = 144.0;
 
     // --- VARIABLES ---
     private Limelight3A limelight;
     private ElapsedTime timer = new ElapsedTime();
+
+    // NEW: Timers for stuck detection
+    private ElapsedTime pathDurationTimer = new ElapsedTime();
+    private ElapsedTime stuckTimer = new ElapsedTime();
 
     private double sumTx = 0;
     private double sumTy = 0;
@@ -45,9 +44,6 @@ public class LimelightPointDrive extends Command {
     private boolean pathGenerated = false;
     private boolean isRed;
 
-    /**
-     * @param isRed Set to true to Mirror X and Heading, but keep Y the same.
-     */
     public LimelightPointDrive(boolean isRed) {
         this.isRed = isRed;
     }
@@ -69,7 +65,9 @@ public class LimelightPointDrive extends Command {
 
     @Override
     public void update() {
-        // PHASE 1: COLLECT DATA
+        Follower follower = PedroComponent.follower();
+
+        // PHASE 1: COLLECT DATA (First 200ms)
         if (timer.milliseconds() < 200) {
             LLResult result = limelight.getLatestResult();
             if (result != null && result.isValid()) {
@@ -80,24 +78,21 @@ public class LimelightPointDrive extends Command {
             return;
         }
 
-        // PHASE 2: GENERATE PATH
+        // PHASE 2: GENERATE PATH (Run once after 200ms)
         if (!pathGenerated) {
-            Follower follower = PedroComponent.follower();
             Pose currentPose = follower.getPose();
             double targetY;
 
-            // --- 1. SET TARGETS BASED ON ALLIANCE ---
+            // --- ALLIANCE LOGIC ---
             double targetFixedX;
             double targetStandoffX;
             double targetHeading;
 
             if (isRed) {
-                // Mirror X (144 - BlueX), Flip Heading (0), KEEP Y THE SAME
-                targetFixedX = FIELD_WIDTH - FIXED_X_BLUE;       // 144 - 10 = 134
-                targetStandoffX = FIELD_WIDTH - STANDOFF_X_BLUE; // 144 - 38 = 106
+                targetFixedX = FIELD_WIDTH - FIXED_X_BLUE;
+                targetStandoffX = FIELD_WIDTH - STANDOFF_X_BLUE;
                 targetHeading = HEADING_RED;
             } else {
-                // Standard Blue
                 targetFixedX = FIXED_X_BLUE;
                 targetStandoffX = STANDOFF_X_BLUE;
                 targetHeading = HEADING_BLUE;
@@ -106,12 +101,6 @@ public class LimelightPointDrive extends Command {
             if (sampleCount > 0) {
                 double avgTx = sumTx / sampleCount;
                 double avgTy = sumTy / sampleCount;
-
-                // --- 2. CALCULATE Y ---
-                // Note: This math works for both sides automatically provided the Heading is correct.
-                // On Blue (180 deg), a positive tx (Right) increases Y.
-                // On Red (0 deg), a negative tx (Left) increases Y.
-
                 double angleToGoalDepression = MOUNT_ANGLE - avgTy;
                 if (angleToGoalDepression < 1.0) angleToGoalDepression = 1.0;
 
@@ -119,13 +108,12 @@ public class LimelightPointDrive extends Command {
                 double absoluteAngle = currentPose.getHeading() - Math.toRadians(avgTx);
                 double artifactY = currentPose.getY() + Math.sin(absoluteAngle) * distanceToArtifact;
 
-                // Clip to the SAME Y range for both alliances
                 targetY = Range.clip(artifactY, MIN_Y, MAX_Y);
             } else {
                 targetY = FALLBACK_Y;
             }
 
-            // --- 3. BUILD PATH ---
+            // --- BUILD PATH ---
             Pose standoffPose = new Pose(targetStandoffX, targetY, targetHeading);
             Pose finalPose = new Pose(targetFixedX, targetY, targetHeading);
 
@@ -136,15 +124,39 @@ public class LimelightPointDrive extends Command {
                             .addPath(new BezierLine(standoffPose, finalPose))
                             .setConstantHeadingInterpolation(targetHeading)
                             .build(),
-                    false
+                    false // holdEnd = false (usually false for intermediate paths, true if this is the final stop)
             );
 
+            // Reset timers for stuck detection
+            pathDurationTimer.reset();
+            stuckTimer.reset();
             pathGenerated = true;
+        }
+
+        // PHASE 3: STUCK DETECTION
+        // We only check this if the path has started and the follower is trying to move
+        if (pathGenerated && follower.isBusy()) {
+            // Get robot speed (magnitude of velocity vector)
+            double speed = follower.getVelocity().getMagnitude();
+
+            // Logic: If we are moving (> 2 in/sec) OR we just started the path (< 0.5s ago),
+            // we are NOT stuck. Reset the timer.
+            if (speed > 2.0 || pathDurationTimer.seconds() < 0.5) {
+                stuckTimer.reset();
+            }
+
+            // If the stuck timer exceeds 0.5 seconds, force a stop.
+            if (stuckTimer.seconds() > 0.5) {
+                follower.breakFollowing();
+                // Because we called breakFollowing(), follower.isBusy() will become false,
+                // making isDone() return true, effectively skipping to the next command.
+            }
         }
     }
 
     @Override
     public boolean isDone() {
+        // Command finishes when path is generated AND follower stops (either by finishing or being broken)
         return pathGenerated && !PedroComponent.follower().isBusy();
     }
 }

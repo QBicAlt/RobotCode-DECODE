@@ -20,6 +20,7 @@ import org.firstinspires.ftc.teamcode.subsystem.waitForShots;
 
 import dev.nextftc.bindings.BindingManager;
 import dev.nextftc.core.commands.Command;
+import dev.nextftc.core.commands.groups.ParallelGroup;
 import dev.nextftc.core.commands.groups.ParallelRaceGroup;
 import dev.nextftc.core.commands.groups.SequentialGroup;
 import dev.nextftc.core.commands.utility.LambdaCommand;
@@ -204,23 +205,24 @@ public class BlueCornerSpam extends NextFTCOpMode {
     @Override
     public void onInit() {
         // IMPORTANT: Zero the turret encoder logic based on current position
-        Turret.INSTANCE.resetEncoderLogic();
+
 
         // Set Blue Goal Coordinates
-        VisionDistanceHelper.GOAL_TARGET_X = 6; // Approx 16.36
-        VisionDistanceHelper.GOAL_TARGET_Y = 144;
+        VisionDistanceHelper.GOAL_TARGET_X_FAR = 0; // Approx 16.36
+        VisionDistanceHelper.GOAL_TARGET_Y_FAR = 140;
 
         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
 
 
         // Auto-aim immediately uses Odometry now
-        Turret.INSTANCE.enableOdometryAim();
     }
 
     @Override
     public void onStartButtonPressed() {
         LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
         LauncherOuttakeFuckingThing.autoCalculate = true;
+        Turret.INSTANCE.enableOdometryAim();
+
 
         Follower follower = PedroComponent.follower();
         follower.setPose(new Pose(48.0, 7.0, Math.toRadians(180)));
@@ -237,18 +239,27 @@ public class BlueCornerSpam extends NextFTCOpMode {
                     LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed);
                 }),
 
-                Intake.INSTANCE.intakeOneZero,
+                Intake.INSTANCE.intakeOnePowerFull,
                 Intake.INSTANCE.intakeTwoZero,
-                movefirst,
-                Intake.INSTANCE.indexerIn,
+
+
+
+                new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(.5),
+
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
+                                )),
+                        Intake.INSTANCE.indexerIn,
+                        movefirst
+                ),
 
                 Intake.INSTANCE.intakeOnePowerFull,
                 Intake.INSTANCE.intakeTwoPowerFull,
 
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
-                ),
-                new waitForShots(2,.5),
+                new waitForShots(2,.2),
+
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
@@ -256,24 +267,34 @@ public class BlueCornerSpam extends NextFTCOpMode {
                 grabfirst_2,
 
                 Intake.INSTANCE.intakeTwoZero,
-                scoreFirst,
                 Intake.INSTANCE.indexerIn,
 
+                new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(1.5),
 
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
+                                )),
+                        Intake.INSTANCE.indexerIn,
+                        scoreFirst
+                ),
+
+
 
                 // AIM
-                new LambdaCommand().setStart(() -> Turret.INSTANCE.enableOdometryAim()),
-
                 Intake.INSTANCE.intakeTwoPowerFull,
-                new waitForShots(3,.5),
+                Intake.INSTANCE.intakeOnePowerFull,
+
+                new waitForShots(2,.2),
 
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
-                new LimelightPointDrive(true),
+
+                new LimelightPointDrive(false),
                 Intake.INSTANCE.intakeTwoZero,
+
 
 
               /*  grabsecond
@@ -287,60 +308,97 @@ public class BlueCornerSpam extends NextFTCOpMode {
                             Turret.INSTANCE.setManualAngle(-60);
                         }),
                 */
-                scoresecond,
-                Intake.INSTANCE.indexerIn,
 
-                new LambdaCommand().setStart(() -> Turret.INSTANCE.enableOdometryAim()),
+
+                new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(1),
+
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
+                                )),
+                        Intake.INSTANCE.indexerIn,
+                        scoresecond
+                ),
+
                 Intake.INSTANCE.intakeTwoPowerFull,
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
+                Intake.INSTANCE.intakeOnePowerFull,
 
-
-                new waitForShots(2,.5),
+                new waitForShots(2,.2),
 
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
-                new LimelightPointDrive(true),
+                new LimelightPointDrive(false),
                 Intake.INSTANCE.intakeTwoZero,
 
-                scorethird,
-                Intake.INSTANCE.indexerIn,
+
+                new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(1),
+
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
+                                )),
+                        Intake.INSTANCE.indexerIn,
+                        scorethird
+                ),
 
                 Intake.INSTANCE.intakeTwoPowerFull,
+                Intake.INSTANCE.intakeOnePowerFull,
 
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
+                new waitForShots(2,.2),
 
-                new waitForShots(2,.5),
+
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
-                new LimelightPointDrive(true),
+                new LimelightPointDrive(false),
                 Intake.INSTANCE.intakeTwoZero,
 
-                scorefourth,
-                Intake.INSTANCE.indexerIn,
+
+                new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(1),
+
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
+                                )),
+                        Intake.INSTANCE.indexerIn,
+                        scorefourth
+                ),
+
 
                 Intake.INSTANCE.intakeTwoPowerFull,
+                Intake.INSTANCE.intakeOnePowerFull,
 
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)),
 
-                new waitForShots(2,.5),
+                new waitForShots(2,.2),
+
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
-                new LimelightPointDrive(true),
+                new LimelightPointDrive(false),
                 Intake.INSTANCE.intakeTwoZero,
 
-                scorefifth,
-                Intake.INSTANCE.indexerIn,
+
+                new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(1),
+
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
+                                )),
+                        Intake.INSTANCE.indexerIn,
+                        scorefifth
+                ),
+
 
                 Intake.INSTANCE.intakeTwoPowerFull,
+                Intake.INSTANCE.intakeOnePowerFull,
 
-                new LambdaCommand().setStart(() ->
-                 LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open))
+                new waitForShots(2,.2)
+
 
 
 

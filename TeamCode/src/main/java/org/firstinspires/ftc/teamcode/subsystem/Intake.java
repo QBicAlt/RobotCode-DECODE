@@ -33,7 +33,7 @@ public class Intake implements Subsystem {
     public final Command intakeOn = new SequentialGroup(intakeOnePowerFull, intakeTwoPowerFull);
     public final Command intakeOff = new SequentialGroup(intakeOneZero, intakeTwoZero);
 
-    public final Command indexerIn = new SetPosition(indexer, .02).requires(this);
+    public final Command indexerIn = new SetPosition(indexer, .03).requires(this);
     public final Command indexerOut = new SetPosition(indexer, .77).requires(this);
 
     // --- UPDATED AUTO COMMAND ---
