@@ -30,10 +30,10 @@ import dev.nextftc.core.components.SubsystemComponent;
 import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.ftc.NextFTCOpMode;
 
-@Autonomous(name = "blueGateSpamblucru ")
-public class blueGateSpamblucru extends NextFTCOpMode {
+@Autonomous(name = "redGateSpamblucru ")
+public class redGateSpamblucru extends NextFTCOpMode {
 
-    public blueGateSpamblucru() {
+    public redGateSpamblucru() {
         addComponents(
                 new PedroComponent(Constants::createFollower),
                 new SubsystemComponent(Turret.INSTANCE),
@@ -49,9 +49,9 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower .pathBuilder()
                                 .addPath(
-                                        new BezierLine(GrabGateStorage.startingPose, new Pose(48.000, 96.000))
+                                        new BezierLine(GrabGateStorage.startingPose.mirror(), new Pose(48.000, 96.000).mirror())
                                 )
-                                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+                                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(0))
                                 .build()
                 );
             })
@@ -69,16 +69,16 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(48.000, 96.000),
-                                                new Pose(45.947, 55.602),
-                                                new Pose(40.786, 60.264),
-                                                new Pose(21.642, 62.095),
-                                                new Pose(43.783, 57.933),
-                                                new Pose(22.973, 57.434),
-                                                new Pose(22.000, 58.432)
+                                                new Pose(48.000, 96.000).mirror(),
+                                                new Pose(45.947, 55.602).mirror(),
+                                                new Pose(40.786, 60.264).mirror(),
+                                                new Pose(21.642, 62.095).mirror(),
+                                                new Pose(43.783, 57.933).mirror(),
+                                                new Pose(22.973, 57.434).mirror(),
+                                                new Pose(22.000, 58.432).mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build(),
                         1, false
                 );
@@ -96,7 +96,7 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(22.000, 58.432), GrabGateStorage.scorePose)
+                                        new BezierLine(new Pose(22.000, 58.432).mirror(), GrabGateStorage.scorePose.mirror())
                                 )
                                 .setTangentHeadingInterpolation()
                                 .setReversed()
@@ -108,7 +108,7 @@ public class blueGateSpamblucru extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return  !f.isBusy();
+                return !f.isBusy();
             });
     public static final Command grabGate1_4 = new LambdaCommand() //4
             .setStart(() -> {
@@ -116,11 +116,11 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierCurve(GrabGateStorage.scorePose,
-                                                GrabGateStorage.curveControlPose,
-                                                GrabGateStorage.approachPose)
+                                        new BezierCurve(GrabGateStorage.scorePose.mirror(),
+                                                GrabGateStorage.curveControlPose.mirror(),
+                                                GrabGateStorage.approachPose.mirror())
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build(),
                         1, false
                 );
@@ -134,11 +134,11 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                GrabGateStorage.approachPose,
-                                                GrabGateStorage.preGrabPose
+                                                GrabGateStorage.approachPose.mirror(),
+                                                GrabGateStorage.preGrabPose.mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(130))
+                                .setConstantHeadingInterpolation(Math.toRadians(50))
                                 .build(),
                         false
                 );
@@ -155,9 +155,9 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(GrabGateStorage.preGrabPose, GrabGateStorage.grabPose)
+                                        new BezierLine(GrabGateStorage.preGrabPose.mirror(), GrabGateStorage.grabPose.mirror())
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(140))
+                                .setConstantHeadingInterpolation(Math.toRadians(40))
                                 .build(),
                         false
                 );
@@ -174,9 +174,9 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                GrabGateStorage.grabPose,
-                                                GrabGateStorage.curveScorePose,
-                                                GrabGateStorage.scorePose
+                                                GrabGateStorage.grabPose.mirror(),
+                                                GrabGateStorage.curveScorePose.mirror(),
+                                                GrabGateStorage.scorePose.mirror()
                                         ))
 
                                 .setTangentHeadingInterpolation()
@@ -188,7 +188,7 @@ public class blueGateSpamblucru extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return  !f.isBusy();
+                return !f.isBusy();
             });
 
 
@@ -198,11 +198,11 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierCurve(GrabGateStorage.scorePose,
-                                                GrabGateStorage.curveControlPose,
-                                                GrabGateStorage.approachPose)
+                                        new BezierCurve(GrabGateStorage.scorePose.mirror(),
+                                                GrabGateStorage.curveControlPose.mirror(),
+                                                GrabGateStorage.approachPose.mirror())
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build(),
                         false
 
@@ -223,11 +223,11 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                GrabGateStorage.approachPose,
-                                                GrabGateStorage.preGrabPose
+                                                GrabGateStorage.approachPose.mirror(),
+                                                GrabGateStorage.preGrabPose.mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(130))
+                                .setConstantHeadingInterpolation(Math.toRadians(50))
                                 .build()
                 );
 
@@ -244,9 +244,9 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(14.00, 56.5), GrabGateStorage.grabPose)
+                                        new BezierLine(new Pose(14.00, 56.5).mirror(), GrabGateStorage.grabPose.mirror())
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(140))
+                                .setConstantHeadingInterpolation(Math.toRadians(40))
                                 .build(),
                         false
                 );
@@ -267,8 +267,8 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                GrabGateStorage.grabPose,
-                                                GrabGateStorage.scorePose
+                                                GrabGateStorage.grabPose.mirror(),
+                                                GrabGateStorage.scorePose.mirror()
                                         ))
                                 .setTangentHeadingInterpolation()
                                 .setReversed()
@@ -288,11 +288,11 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierCurve(GrabGateStorage.scorePose,
-                                                GrabGateStorage.curveControlPose,
-                                                GrabGateStorage.approachPose)
+                                        new BezierCurve(GrabGateStorage.scorePose.mirror(),
+                                                GrabGateStorage.curveControlPose.mirror(),
+                                                GrabGateStorage.approachPose.mirror())
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build(),
                         false
 
@@ -313,11 +313,11 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierLine(
-                                                GrabGateStorage.approachPose,
-                                                GrabGateStorage.preGrabPose
+                                                GrabGateStorage.approachPose.mirror(),
+                                                GrabGateStorage.preGrabPose.mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(130))
+                                .setConstantHeadingInterpolation(Math.toRadians(50))
                                 .build()
                 );
 
@@ -334,9 +334,9 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(GrabGateStorage.preGrabPose, GrabGateStorage.grabPose)
+                                        new BezierLine(GrabGateStorage.preGrabPose.mirror(), GrabGateStorage.grabPose.mirror())
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(140))
+                                .setConstantHeadingInterpolation(Math.toRadians(40))
                                 .build(),
                         false
                 );
@@ -357,9 +357,9 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                GrabGateStorage.grabPose,
-                                                GrabGateStorage.curveScorePose,
-                                                GrabGateStorage.scorePose
+                                                GrabGateStorage.grabPose.mirror(),
+                                                GrabGateStorage.curveScorePose.mirror(),
+                                                GrabGateStorage.scorePose.mirror()
                                         ))
                                 .setTangentHeadingInterpolation()
                                 .setReversed()
@@ -381,12 +381,12 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                         follower.pathBuilder()
                                 .addPath(
                                         new BezierCurve(
-                                                new Pose(57.000, 82.000),
-                                                new Pose(49.443, 85.401),
-                                                new Pose(25.000, 84.000)
+                                                new Pose(57.000, 82.000).mirror(),
+                                                new Pose(49.443, 85.401).mirror(),
+                                                new Pose(25.000, 84.000).mirror()
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(180))
+                                .setConstantHeadingInterpolation(Math.toRadians(0))
                                 .build() , false
                 );
 
@@ -402,7 +402,7 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(25.000, 84.000), new Pose(52.000, 86.000))
+                                        new BezierLine(new Pose(25.000, 84.000).mirror(), new Pose(52.000, 86.000).mirror())
                                 )
                                 .setTangentHeadingInterpolation()
                                 .setReversed()
@@ -423,7 +423,7 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(52.000, 86.000), new Pose(40.000, 86.000))
+                                        new BezierLine(new Pose(52.000, 86.000).mirror(), new Pose(40.000, 86.000).mirror())
                                 )
                                 .setTangentHeadingInterpolation()
                                 .build(),
@@ -448,14 +448,12 @@ public class blueGateSpamblucru extends NextFTCOpMode {
     public void onInit() {
 
         // Blue Goal
-        VisionDistanceHelper.GOAL_TAG_X_IN=  144.0 - 127.64;
+        VisionDistanceHelper.GOAL_TAG_X_IN=  127.64;
         VisionDistanceHelper.GOAL_TAG_Y_IN  = 130.37;
 
-        Turret.INSTANCE.resetEncoderLogic();
 
 
-
-        VisionDistanceHelper.GOAL_TARGET_X =  0;
+        VisionDistanceHelper.GOAL_TARGET_X =  144;
         VisionDistanceHelper.GOAL_TARGET_Y = 144;
 
     }
@@ -464,25 +462,29 @@ public class blueGateSpamblucru extends NextFTCOpMode {
     public void onStartButtonPressed() {
         LauncherOuttakeFuckingThing.autoCalculate = true;
         LauncherOuttakeFuckingThing.INSTANCE.disableCompensation();
+
+
         Follower follower = PedroComponent.follower();
-        follower.setPose(GrabGateStorage.startingPose);
+        follower.setPose(GrabGateStorage.startingPose.mirror());
+
         Command auto = new SequentialGroup(
-        new LambdaCommand().setStart(() -> {
-            Turret.INSTANCE.enableOdometryAim();
-        }),
-        Intake.INSTANCE.indexerOut,
-        Intake.INSTANCE.indexerIn,
-        Intake.INSTANCE.intakeOneZero,
-        Intake.INSTANCE.intakeTwoZero,
-        Intake.INSTANCE.indexerIn,
-        new ParallelGroup(
+
+                new LambdaCommand().setStart(() -> {
+                    Turret.INSTANCE.enableOdometryAim();
+                }),
+                Intake.INSTANCE.indexerOut,
                 Intake.INSTANCE.indexerIn,
-                scoreFirst1
-        ),
-        Intake.INSTANCE.intakeTwoPowerFull,
-        Intake.INSTANCE.intakeOnePowerFull,
-        new waitForShots(2,.3),
-        new LambdaCommand().setStart(() ->
+                Intake.INSTANCE.intakeOneZero,
+                Intake.INSTANCE.intakeTwoZero,
+                Intake.INSTANCE.indexerIn,
+                new ParallelGroup(
+                        Intake.INSTANCE.indexerIn,
+                        scoreFirst1
+                ),
+                Intake.INSTANCE.intakeTwoPowerFull,
+                Intake.INSTANCE.intakeOnePowerFull,
+                new waitForShots(2,.3),
+                new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
                 grabmid2,
@@ -533,7 +535,7 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
-                new Delay(.75),
+                new Delay(.5),
                 grabgate3_8,
                 grabGate4_9,
                 grabGate10,
@@ -563,6 +565,7 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 grabGate14,
                 new Delay(.75),
                 Intake.INSTANCE.intakeTwoZero,
+                Intake.INSTANCE.intakeOneZero,
                 new ParallelGroup(
                         new SequentialGroup(
                                 new Delay(1),
@@ -572,6 +575,7 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                                 )),
                         Intake.INSTANCE.indexerIn,
                         scoreGate_15
+
                 ),
                 Intake.INSTANCE.intakeOnePowerFull,
                 Intake.INSTANCE.intakeTwoPowerFull,
@@ -601,6 +605,11 @@ public class blueGateSpamblucru extends NextFTCOpMode {
                 Intake.INSTANCE.intakeOnePowerFull,
                 new waitForShots(3,.3),
                 park_18
+
+
+                // Manual Turret Logic to avoid collision if necessary, then aim
+
+                // Final Ai
         );
 
         auto.schedule();

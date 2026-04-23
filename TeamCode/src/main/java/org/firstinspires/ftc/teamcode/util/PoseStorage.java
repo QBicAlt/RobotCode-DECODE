@@ -7,5 +7,9 @@ public class PoseStorage {
     public static boolean hasAutoRun = false;
 
     // This variable MUST be here. If it is missing, the app crashes.
-    public static double turretEncoderTicks = 0.0;
+    public static double turretAngle = 0.0;
+
+    public static double turretAngle() {
+        return turretAngle;
+    }
 }

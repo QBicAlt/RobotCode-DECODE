@@ -40,15 +40,15 @@ public class blueGregTeleOp extends NextFTCOpMode {
 
     // --- TUNING: TURN SPEED LIMIT ---
     // 0.5 means the robot spins at 50% speed when the stick is fully pushed
-    public static double TURN_SENSITIVITY = 0.8;
+    public static double TURN_SENSITIVITY = 0.7;
 
     public blueGregTeleOp() {
         VisionDistanceHelper.GOAL_TAG_X_IN = 144 - 127.64;
         VisionDistanceHelper.GOAL_TAG_Y_IN = 130.37;
         VisionDistanceHelper.GOAL_TARGET_X_FAR = 0;
-        VisionDistanceHelper.GOAL_TARGET_Y_FAR = 138;
+        VisionDistanceHelper.GOAL_TARGET_Y_FAR = 144;
         VisionDistanceHelper.GOAL_TARGET_X = 0;
-        VisionDistanceHelper.GOAL_TARGET_Y = 136;
+        VisionDistanceHelper.GOAL_TARGET_Y = 138;
 
         addComponents(
                 new PedroComponent(Constants::createFollower),
@@ -67,6 +67,7 @@ public class blueGregTeleOp extends NextFTCOpMode {
         if (PoseStorage.hasAutoRun) {
             follower().setPose(PoseStorage.currentPose);
             telemetry.addLine("Localization: Loaded from Auto Snapshot");
+            Turret.INSTANCE.setTurretAngle(PoseStorage.turretAngle);
 
             // Restore Turret
         } else {
@@ -148,6 +149,16 @@ public class blueGregTeleOp extends NextFTCOpMode {
             gamepad2.rumble(100);
         }));
 
+        Gamepads.gamepad1().dpadLeft().whenBecomesTrue(new LambdaCommand().setStart(() -> {
+            VisionDistanceHelper.GOAL_TARGET_X -= 2.0;
+            gamepad1.rumble(100); // Haptic feedback so you know it registered
+        }));
+
+        Gamepads.gamepad1().dpadRight().whenBecomesTrue(new LambdaCommand().setStart(() -> {
+            VisionDistanceHelper.GOAL_TARGET_X += 2.0;
+            gamepad1.rumble(100);
+        }));
+
         Gamepads.gamepad2().square()
                 .whenBecomesTrue(new LambdaCommand().setStart(() -> {
                     LauncherOuttakeFuckingThing.INSTANCE.enableAutoCalculation();
@@ -160,7 +171,7 @@ public class blueGregTeleOp extends NextFTCOpMode {
         Gamepads.gamepad2().rightBumper().whenBecomesTrue(Intake.INSTANCE.extendClimb1).whenBecomesTrue(Intake.INSTANCE.extendClimb2);
         Gamepads.gamepad2().leftBumper().whenBecomesTrue(Intake.INSTANCE.retractClimb1).whenBecomesTrue(Intake.INSTANCE.retractClimb2);
 
-        Gamepads.gamepad1().leftStickButton().whenBecomesTrue(new LambdaCommand().setStart(() -> follower().setPose(new Pose(11.37, 8.5f, Math.toRadians(180)))));
+        Gamepads.gamepad1().leftStickButton().whenBecomesTrue(new LambdaCommand().setStart(() -> follower().setPose(new Pose(11.37, 8.5f, Math.toRadians(180)).mirror())));
     }
 
     @Override
@@ -210,6 +221,9 @@ public class blueGregTeleOp extends NextFTCOpMode {
         // --- VISUAL CONFIRMATION OF TOGGLE ---
         telemetry.addData("Vel Compensation", LauncherOuttakeFuckingThing.useVelocityCompensation ? "ON" : "OFF");
         telemetry.addData("Calculated Offset", LauncherOuttakeFuckingThing.calculatedTurretOffset);
+
+        telemetry.addData("hasball:", LauncherOuttakeFuckingThing.INSTANCE.hasBall());
+
 
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
         telemetry.addData("motor rpm", LauncherOuttakeFuckingThing.INSTANCE.getCurrentRpm());

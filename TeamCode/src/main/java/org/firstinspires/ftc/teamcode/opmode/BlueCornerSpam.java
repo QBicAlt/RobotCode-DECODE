@@ -17,6 +17,7 @@ import org.firstinspires.ftc.teamcode.subsystem.LimelightPointDrive;
 import org.firstinspires.ftc.teamcode.subsystem.Turret;
 import org.firstinspires.ftc.teamcode.subsystem.VisionDistanceHelper;
 import org.firstinspires.ftc.teamcode.subsystem.waitForShots;
+import org.firstinspires.ftc.teamcode.util.PoseStorage;
 
 import dev.nextftc.bindings.BindingManager;
 import dev.nextftc.core.commands.Command;
@@ -433,6 +434,9 @@ public class BlueCornerSpam extends NextFTCOpMode {
 
         // Calculate distance via Odometry now
         double distInches = VisionDistanceHelper.distanceToGoalInches(pedroPose);
+
+        PoseStorage.turretAngle = Turret.INSTANCE.getMeasuredAngleDeg();
+
 
         TelemetryPacket packet = new TelemetryPacket();
         Canvas field = packet.fieldOverlay();

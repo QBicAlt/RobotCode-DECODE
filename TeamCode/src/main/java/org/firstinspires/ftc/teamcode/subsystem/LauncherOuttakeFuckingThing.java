@@ -58,18 +58,23 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     public static double calculatedTurretOffset = 0.0;
 
     // Turret latch positions
-    public static double turret_Closed  = .7;
+    public static double turret_Closed  = .75;
     public static double turret_Open    = 0.87;
 
     // Default/Fallback
     public static double shooterAngle = 25.267884 ;
     public static double targetRpm = 0.0;
 
+    public static double angle_tester = 25.267884 ;
+
+    public static boolean test = false;
+
+
     // Preset RPMs
     public static double SLOW_RPM   = 3000;
     public static double LAUNCH_RPM = 3600;
 
-    public static PIDCoefficients COEFFS = new PIDCoefficients(0.0045, 0.0, 0.0);
+    public static PIDCoefficients COEFFS = new PIDCoefficients(0.007, 0.0, 0.0);
     private ControlSystem velocityPID;
 
     public static double kS = 0.0175;
@@ -85,7 +90,7 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
 
     public static double MANUAL_RPM = 2700;
     public static double MANUAL_ANGLE = 32.0;
-    public static double BALL_DETECT_CM = 4.0;
+    public static double BALL_DETECT_CM = 2.0;
 
     public double getTargetRpm() { return targetRpm; }
 
@@ -122,7 +127,7 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
 
     public boolean hasBall() {
         boolean sensor1HasBall = checkSensor(colorSensor, BALL_DETECT_CM);
-        boolean sensor2HasBall = checkSensor(colorSensor2, 8);
+        boolean sensor2HasBall = checkSensor(colorSensor2, 7.5);
         return sensor1HasBall || sensor2HasBall;
     }
 
@@ -187,6 +192,11 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
     }
     @Override
     public void periodic() {
+
+        if (test) {
+            setAngle(angle_tester );
+        }
+
         if (autoCalculate) {
             Pose currentPose = getPose();
             double distIn = VisionDistanceHelper.distanceToGoalInches(currentPose);
@@ -259,7 +269,7 @@ public class LauncherOuttakeFuckingThing implements Subsystem {
                 }
 
                 setAngle(finalHoodAngle);
-                setTargetRpm(finalRpm);
+                 setTargetRpm(finalRpm);
             }
         }
 

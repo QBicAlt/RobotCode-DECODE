@@ -42,12 +42,12 @@ public class Turret implements Subsystem {
     public static double TICKS_PER_REV_ENCODER = 4096;
     public static double TURRET_GEAR_RATIO = 112.0 / 19.0;
     public static boolean ENCODER_REVERSE = true;
-    public static double MIN_LIMIT_DEG = -130.0;
-    public static double MAX_LIMIT_DEG = 160;
+    public static double MIN_LIMIT_DEG = -180.0;
+    public static double MAX_LIMIT_DEG = 150;
     public static boolean INVERT_SERVO_OUTPUT = true;
-    public static double kP = 0.02;
-    public static double kI = 0.0;
-    public static double kD = 0.0027;
+    public static double kP = 0.015;
+    public static double kI = 0.00;
+    public static double kD = 0.023;
     public static double MAX_POWER = 1.0;
 
     // --- DELETED PHYSICS CONSTANTS (Now in Launcher) ---
@@ -70,13 +70,23 @@ public class Turret implements Subsystem {
         turretLimit = ActiveOpMode.hardwareMap().get(DigitalChannel.class, LIMIT_SWITCH_NAME);
         turretLimit.setMode(DigitalChannel.Mode.INPUT);
 
-        resetEncoderLogic();
-        turretSetpointDeg = 0.0;
+        //resetEncoderLogic();
+        //turretSetpointDeg = 0.0;
         state = TurretState.MANUAL;
     }
 
     public TurretState getState() {
         return state;
+    }
+
+    public void setTurretAngle(double angle) {
+        // Clip the input to prevent breaking physical stops
+        angle = Range.clip(angle, MIN_LIMIT_DEG, MAX_LIMIT_DEG);
+
+        // Update state and setpoints
+        state = TurretState.MANUAL;
+        turretSetpointDeg = angle;
+        angle_tester = angle; // Sync with dashboard
     }
 
     public boolean isLimitPressed() {
@@ -134,6 +144,7 @@ public class Turret implements Subsystem {
     public void enableOdometryAim() {
         state = TurretState.ODOMETRY_AIM;
     }
+
 
     public void off() {
         state = TurretState.OFF;

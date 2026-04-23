@@ -42,7 +42,6 @@ public class LimelightManager {
         return null;
     }
 
-    // --- FIXED COMMAND FACTORY ---
     public Command relocalize(Follower follower) {
         return new Command() {
             private final ElapsedTime timer = new ElapsedTime();
@@ -50,18 +49,15 @@ public class LimelightManager {
             private double sumY = 0;
             private int count = 0;
 
-            // CHANGED: onStart -> start
             @Override
             public void start() {
                 timer.reset();
                 sumX = 0;
                 sumY = 0;
                 count = 0;
-// Instead of rumble(200)
                 Gamepads.gamepad1().getGamepad().invoke().rumble(200);
             }
 
-            // CHANGED: onUpdate -> update
             @Override
             public void update() {
                 double currentHeading = follower.getPose().getHeading();
@@ -79,7 +75,6 @@ public class LimelightManager {
                 return timer.milliseconds() >= 200;
             }
 
-            // CHANGED: onStop -> stop(boolean interrupted)
             @Override
             public void stop(boolean interrupted) {
                 if (count > 0) {

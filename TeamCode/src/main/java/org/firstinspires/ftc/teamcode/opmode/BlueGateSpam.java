@@ -59,7 +59,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.99 || !f.isBusy();
+                return !f.isBusy();
             });
 
     public static final Command grabmid2 = new LambdaCommand() // 2
@@ -96,19 +96,18 @@ public class BlueGateSpam extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(new Pose(22.000, 58.432), GrabGateStorage.scorePose)
+                                        new BezierLine(new Pose(20.000, 58.432), GrabGateStorage.scorePose)
                                 )
                                 .setTangentHeadingInterpolation()
                                 .setReversed()
-                                .build(),
-                        false
+                                .build()
+
 
                 );
             })
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
-                // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.99 || !f.isBusy();
+                return  !f.isBusy();
             });
     public static final Command grabGate1_4 = new LambdaCommand() //4
             .setStart(() -> {
@@ -116,7 +115,9 @@ public class BlueGateSpam extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                new BezierLine(GrabGateStorage.scorePose,GrabGateStorage.approachPose)
+                                        new BezierCurve(GrabGateStorage.scorePose,
+                                                GrabGateStorage.curveControlPose,
+                                                GrabGateStorage.approachPose)
                         )
                         .setConstantHeadingInterpolation(Math.toRadians(180))
                         .build(),
@@ -131,13 +132,12 @@ public class BlueGateSpam extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierCurve(
+                                        new BezierLine(
                                                 GrabGateStorage.approachPose,
-                                                GrabGateStorage.curveControlPose,
                                                 GrabGateStorage.preGrabPose
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(130))
+                                .setConstantHeadingInterpolation(Math.toRadians(140))
                                 .build(),
                              false
                 );
@@ -145,7 +145,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.95 || !f.isBusy();
+                return f.getCurrentTValue() > 0.97 || !f.isBusy();
             });
 
     public static final Command grabGate3 = new LambdaCommand() // 5
@@ -156,7 +156,7 @@ public class BlueGateSpam extends NextFTCOpMode {
                                 .addPath(
                                         new BezierLine(GrabGateStorage.preGrabPose, GrabGateStorage.grabPose)
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(140))
+                                .setConstantHeadingInterpolation(Math.toRadians(150))
                                 .build(),
                         false
                 );
@@ -164,7 +164,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.95 || !f.isBusy();
+                return f.getCurrentTValue() > 0.97 || !f.isBusy();
             });
     public static final Command scoreGate1_6 = new LambdaCommand() //6
             .setStart(() -> {
@@ -186,7 +186,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.99 || !f.isBusy();
+                return  !f.isBusy();
             });
 
 
@@ -196,7 +196,9 @@ public class BlueGateSpam extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierLine(GrabGateStorage.scorePose,GrabGateStorage.approachPose)
+                                        new BezierCurve(GrabGateStorage.scorePose,
+                                                GrabGateStorage.curveControlPose,
+                                                GrabGateStorage.approachPose)
                                 )
                                 .setConstantHeadingInterpolation(Math.toRadians(180))
                                 .build(),
@@ -208,7 +210,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.95 || !f.isBusy();
+                return f.getCurrentTValue() > 0.97 || !f.isBusy();
             });
 
 
@@ -218,13 +220,12 @@ public class BlueGateSpam extends NextFTCOpMode {
                 follower.followPath(
                         follower.pathBuilder()
                                 .addPath(
-                                        new BezierCurve(
+                                        new BezierLine(
                                                 GrabGateStorage.approachPose,
-                                                GrabGateStorage.curveControlPose,
                                                 GrabGateStorage.preGrabPose
                                         )
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(130))
+                                .setConstantHeadingInterpolation(Math.toRadians(140))
                                 .build()
                 );
 
@@ -232,7 +233,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.95 || !f.isBusy();
+                return f.getCurrentTValue() > 0.97 || !f.isBusy();
             });
 
     public static final Command grabGate6 = new LambdaCommand() //8
@@ -243,7 +244,7 @@ public class BlueGateSpam extends NextFTCOpMode {
                                 .addPath(
                                         new BezierLine(GrabGateStorage.preGrabPose, GrabGateStorage.grabPose)
                                 )
-                                .setConstantHeadingInterpolation(Math.toRadians(140))
+                                .setConstantHeadingInterpolation(Math.toRadians(150))
                                         .build(),
                                 false
                 );
@@ -252,7 +253,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.95 || !f.isBusy();
+                return f.getCurrentTValue() > 0.97 || !f.isBusy();
             });
 
 
@@ -278,7 +279,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.99 || !f.isBusy();
+                return  !f.isBusy();
             });
     public static final Command grabFar_10 = new LambdaCommand() //10
             .setStart(() -> {
@@ -302,7 +303,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.95 || !f.isBusy();
+                return f.getCurrentTValue() > 0.97 || !f.isBusy();
             });
     public static final Command scoreFar_11 = new LambdaCommand() //11
             .setStart(() -> {
@@ -321,7 +322,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.99 || !f.isBusy();
+                return  !f.isBusy();
             });
     public static final Command grabClose_12 = new LambdaCommand() //12
             .setStart(() -> {
@@ -363,7 +364,7 @@ public class BlueGateSpam extends NextFTCOpMode {
             .setIsDone(() -> {
                 Follower f = PedroComponent.follower();
                 // We are done if we pass 95% progress OR if the path finishes normally
-                return f.getCurrentTValue() > 0.98 || !f.isBusy();
+                return f.getCurrentTValue() > 0.99 || !f.isBusy();
             });
 
     public static final Command park_14 = new LambdaCommand() //13
@@ -403,18 +404,18 @@ public class BlueGateSpam extends NextFTCOpMode {
 
 
         VisionDistanceHelper.GOAL_TARGET_X =  0;
-        VisionDistanceHelper.GOAL_TARGET_Y = 144;
+        VisionDistanceHelper.GOAL_TARGET_Y = 140;
 
-    }
-
-    @Override
+    }  @Override
     public void onStartButtonPressed() {
         LauncherOuttakeFuckingThing.autoCalculate = true;
         LauncherOuttakeFuckingThing.INSTANCE.disableCompensation();
 
-
         Follower follower = PedroComponent.follower();
         follower.setPose(GrabGateStorage.startingPose);
+
+        // Time to wait after path starts before killing the front intake
+        double frontIntakeCutoff = .5;
 
         Command auto = new SequentialGroup(
 
@@ -423,160 +424,173 @@ public class BlueGateSpam extends NextFTCOpMode {
                 }),
                 Intake.INSTANCE.indexerOut,
                 Intake.INSTANCE.indexerIn,
-
                 Intake.INSTANCE.intakeOneZero,
                 Intake.INSTANCE.intakeTwoZero,
-
-
                 Intake.INSTANCE.indexerIn,
 
-
+                // --- PRELOAD SCORE ---
                 new ParallelGroup(
-                                Intake.INSTANCE.indexerIn,
-                                scoreFirst1
-                                ),
+                        Intake.INSTANCE.indexerIn,
+                        scoreFirst1
+                ),
                 new Delay(.4),
 
                 Intake.INSTANCE.intakeTwoPowerFull,
                 Intake.INSTANCE.intakeOnePowerFull,
 
-
-
-
-                new waitForShots(2,.3),
+                new waitForShots(1.5, .3),
 
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
 
-
+                // --- CYCLE 1 ---
                 grabmid2,
-                Intake.INSTANCE.intakeTwoZero,
+
+                new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(.5),
+                                Intake.INSTANCE.intakeTwoZero// Kept as is
+                        ),
+                        Intake.INSTANCE.indexerIn,
+                        new SequentialGroup(
+                                scoremid3,
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
+                                )
+                        )
+
+                ),
+
+                new Delay(.1 ),
+                Intake.INSTANCE.intakeTwoPowerFull,
+                Intake.INSTANCE.intakeOnePowerFull,
+
+                new waitForShots(1.5, .3),
+
+                new LambdaCommand().setStart(() ->
+                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
+                ),
+
+                // --- CYCLE 2 ---
+                grabGate1_4,
+                grabGate2_5,
+                grabGate3,
+                new Delay(1.3),
+                Intake.INSTANCE.intakeOneZero,
 
 
                 new ParallelGroup(
                         new SequentialGroup(
                                 new Delay(1),
-
+                                Intake.INSTANCE.intakeTwoZero// Kept as is
+                        ),
+                        Intake.INSTANCE.indexerIn,
+                        new SequentialGroup(
+                                scoreGate1_6,
                                 new LambdaCommand().setStart(() ->
                                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
-                        )),
-                        Intake.INSTANCE.indexerIn,
-                        scoremid3
+                                )
+                        )
+
                 ),
-
-
 
                 Intake.INSTANCE.intakeTwoPowerFull,
                 Intake.INSTANCE.intakeOnePowerFull,
 
-
-                new waitForShots(2,.3),
+                new waitForShots(2, .3),
 
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
 
-                grabGate1_4,
-                grabGate2_5,
-                grabGate3,
-                new Delay(1),
-
-                Intake.INSTANCE.intakeTwoZero,
-
-                        new ParallelGroup(
-                                new SequentialGroup(
-                                        new Delay(1),
-
-                                        new LambdaCommand().setStart(() ->
-                                                LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
-                                        )),
-                                        Intake.INSTANCE.indexerIn,
-                                        scoreGate1_6
-                                ),
-
-
-
-
-                Intake.INSTANCE.intakeTwoPowerFull,
-                Intake.INSTANCE.intakeOnePowerFull,
-
-
-
-
-                new waitForShots(2,.3),
-
-                new LambdaCommand().setStart(() ->
-                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
-                ),
-
-                new Delay(.75),
+                // --- CYCLE 3 ---
                 grabgate3_7,
                 grabGate4_8,
                 grabGate6,
-                new Delay(1),
-                Intake.INSTANCE.intakeTwoZero,
-                                new ParallelGroup(
-                                        new SequentialGroup(
-                                                new Delay(1),
-
-                                                new LambdaCommand().setStart(() ->
-                                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
-                                                )),
-                                                Intake.INSTANCE.indexerIn,
-                                                scoreGate_9
-                                        ),
+                new Delay(1.3),
+                Intake.INSTANCE.intakeOneZero,
 
 
-                                        Intake.INSTANCE.intakeTwoPowerFull,
+        new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(1),
+                                Intake.INSTANCE.intakeTwoZero// Kept as is
+                        ),
+                        Intake.INSTANCE.indexerIn,
+                        new SequentialGroup(
+                                scoreGate_9,
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open))
+                        )
+                ),
+
+                Intake.INSTANCE.intakeTwoPowerFull,
                 Intake.INSTANCE.intakeOnePowerFull,
-                new waitForShots(3,.3),
+                new waitForShots(2, .3),
                 new LambdaCommand().setStart(() ->
                         LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
                 ),
+
+                // --- FAR CYCLE ---
                 grabFar_10,
-                Intake.INSTANCE.intakeTwoZero,
 
-                                        new ParallelGroup(
-                                                new SequentialGroup(
-                                                        new Delay(1.5),
 
-                                                        new LambdaCommand().setStart(() ->
-                                                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
-                                                                )),
-                                                                Intake.INSTANCE.indexerIn,
-                                                                scoreFar_11
-                                                        ),
-                                                        Intake.INSTANCE.intakeTwoPowerFull,
+                new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(.5),
+                                Intake.INSTANCE.intakeTwoZero// Kept as is
+                        ),
+                        Intake.INSTANCE.indexerIn,
+                        new SequentialGroup(
+                                scoreFar_11,
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
+                                )
+                        ),
+                        new SequentialGroup(
+                                new Delay(.3),
+                                Intake.INSTANCE.intakeOneZero
+                        )
+                ),
 
-                new waitForShots(3,.3),
+                Intake.INSTANCE.intakeTwoPowerFull,
+                Intake.INSTANCE.intakeOnePowerFull,
+
+
+                new waitForShots(2, .3),
+                new LambdaCommand().setStart(() ->
+                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Closed)
+                ),
 
 
                 grabClose_12,
-                Intake.INSTANCE.intakeTwoZero, new ParallelGroup(
-                                                        new SequentialGroup(
-                                                                new Delay(1.5),
+                new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(.5),
+                                Intake.INSTANCE.intakeTwoZero// Kept as is
+                        ),
+                        Intake.INSTANCE.indexerIn,
+                        new SequentialGroup(
+                                scoreClose_13,
+                                new LambdaCommand().setStart(() ->
+                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
+                                )
+                        ),
+                        new SequentialGroup(
+                                new Delay(.3),
+                                Intake.INSTANCE.intakeOneZero
+                        )
+                ),
+                Intake.INSTANCE.intakeTwoPowerFull,
+                Intake.INSTANCE.intakeOnePowerFull,
 
-                                                                new LambdaCommand().setStart(() ->
-                                                                        LauncherOuttakeFuckingThing.INSTANCE.setTurretLatch(LauncherOuttakeFuckingThing.turret_Open)
-                                                                )),
-                                                                Intake.INSTANCE.indexerIn,
-                                                                scoreClose_13
-                                                        ),
-                                                        Intake.INSTANCE.intakeTwoPowerFull,
 
-                new waitForShots(3,.3),
-
-
+                new waitForShots(2, .3),
 
                 Intake.INSTANCE.intakeOneZero,
                 park_14
-
-
-                // Manual Turret Logic to avoid collision if necessary, then aim
-
-                // Final Ai
-                                        );
+        );
 
         auto.schedule();
     }
@@ -586,6 +600,10 @@ public class BlueGateSpam extends NextFTCOpMode {
         BindingManager.update();
         Pose pedroPose = follower().getPose();
         double distInches = VisionDistanceHelper.distanceToGoalInches(pedroPose);
+
+        PoseStorage.turretAngle = Turret.INSTANCE.getMeasuredAngleDeg();
+
+
 
         telemetry.addData("Dist to Goal (Odo)", distInches);
         telemetry.addData("target RPM", LauncherOuttakeFuckingThing.INSTANCE.getTargetRpm());
